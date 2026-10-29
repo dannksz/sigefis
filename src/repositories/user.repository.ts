@@ -53,6 +53,15 @@ export class UserRepository {
     return user ? toResponseDTO(user) : null;
   }
 
+  async findByEmailForAuthentication(
+    email: string,
+  ): Promise<{ user: UserResponseDTO; senha: string } | null> {
+    const user = await prisma.usuario.findUnique({
+      where: { email },
+    });
+    return user ? { user: toResponseDTO(user), senha: user.senha } : null;
+  }
+
   async update(id: number, data: UpdateUserDTO): Promise<UserResponseDTO> {
     const user = await prisma.usuario.update({
       where: { id },

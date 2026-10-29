@@ -33,7 +33,10 @@ npm install
 
 ### 4. Configurar as Variáveis de Ambiente
 Crie um ficheiro chamado `.env` na raiz do projeto e adicione a string de conexão com o seu MySQL local (XAMPP):
+
+Adicione também `JWT_SECRET` ao `.env`. Gere um valor forte com `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` e nunca compartilhe nem versione o `.env`.
 \`\`\`env
+JWT_SECRET="substitua-pelo-valor-aleatorio-gerado"
 DATABASE_URL="mysql://root:@localhost:3306/sigefis"
 \`\`\`
 

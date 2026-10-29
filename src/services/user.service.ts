@@ -61,4 +61,19 @@ export class UserService {
     await this.findById(id);
     await this.userRepository.delete(id);
   }
+
+// 6. Autenticar usuário (Login)
+  async authenticate(data: { email: string; senha: string }): Promise<UserResponseDTO | null> {
+    const user = await this.userRepository.findByEmailForAuthentication(data.email);
+    if (!user) {
+      return null;
+    }
+
+    const passwordMatch = await bcrypt.compare(data.senha, user.senha);
+    if (!passwordMatch) {
+      return null;
+    }
+
+    return user.user;
+  }
 }
