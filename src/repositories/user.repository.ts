@@ -1,6 +1,6 @@
 import type { usuario } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { CreateUserDTO, UpdateUserDTO, UserResponseDTO, UserRole } from '../types/user';
+import { CreateUserDTO, UpdateUserDTO, UserResponseDTO } from '../types/user';
 
 function toResponseDTO(user: usuario): UserResponseDTO {
   return {
@@ -9,7 +9,7 @@ function toResponseDTO(user: usuario): UserResponseDTO {
     email: user.email,
     cpf: user.cpf,
     cnpj: user.cnpj || null,
-    role: user.role as UserRole,
+    role: user.role,
     criadoEm: user.criadoEm,
     atualizadoEm: user.atualizadoEm,
   };

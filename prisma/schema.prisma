@@ -3,14 +3,21 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
-  engineType    = "library"
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+enum user_role {
+  ADMIN
+  FISCAL
+  GESTOR
+  USER
 }
 
 model estado {
   id      Int      @id @default(autoincrement())
   nome    String   @db.VarChar(45)
-  sigla   String   @db.VarChar(45)
+  sigla   String   @db.VarChar(2)
   regiao  String   @db.VarChar(45)
   cidades cidade[]
 }
@@ -26,67 +33,67 @@ model cidade {
 }
 
 model endereco {
-  id           Int            @id @default(autoincrement())
-  logradouro   String         @db.VarChar(191)
-  numero       String         @db.VarChar(10)
-  complemento  String?        @db.VarChar(45)
-  bairro       String         @db.VarChar(45)
-  cep          String         @db.VarChar(8)
-  cidadeId     Int
-  cidade       cidade         @relation(fields: [cidadeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  empresas     empresa[]
-  orgaos       orgao_publico[]
-  projetos     projeto_obra[]
-  usuarios     usuario[]
+  id          Int             @id @default(autoincrement())
+  logradouro  String          @db.VarChar(191)
+  numero      String          @db.VarChar(10)
+  complemento String?         @db.VarChar(45)
+  bairro      String          @db.VarChar(45)
+  cep         String          @db.VarChar(8)
+  cidadeId    Int
+  cidade      cidade          @relation(fields: [cidadeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  empresas    empresa[]
+  orgaos      orgao_publico[]
+  projetos    projeto_obra[]
+  usuarios    usuario[]
 
   @@index([cidadeId], map: "endereco_cidadeId_fkey")
 }
 
 model usuario {
-  id                  Int                     @id @default(autoincrement())
-  nome                String                  @db.VarChar(191)
-  email               String                  @unique @db.VarChar(191)
-  senha               String                  @db.VarChar(191)
-  cpf                 String                  @db.VarChar(11)
-  cnpj                String?                 @db.VarChar(14)
-  dataNascimento      DateTime?               @db.DateTime(0)
-  role                String                  @db.VarChar(45)
-  criadoEm            DateTime                @default(now()) @db.DateTime(3)
-  atualizadoEm        DateTime                @updatedAt @db.DateTime(3)
-  enderecoId          Int?
-  endereco            endereco?               @relation(fields: [enderecoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  tokenVerificacao    String?                 @db.VarChar(191)
-  fiscalizacoes       fiscalizacao[]
-  logs                log_auditoria[]
-  obrasFiscais        obra_fiscal[]
-  processosReg        processo_regularizacao[]
+  id               Int                      @id @default(autoincrement())
+  nome             String                   @db.VarChar(191)
+  email            String                   @unique @db.VarChar(191)
+  senha            String                   @db.VarChar(191)
+  cpf              String                   @db.VarChar(11)
+  cnpj             String?                  @db.VarChar(14)
+  dataNascimento   DateTime?                @db.DateTime(0)
+  role             user_role                @default(USER)
+  criadoEm         DateTime                 @default(now()) @db.DateTime(3)
+  atualizadoEm     DateTime                 @updatedAt @db.DateTime(3)
+  enderecoId       Int?
+  endereco         endereco?                @relation(fields: [enderecoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  tokenVerificacao String?                  @db.VarChar(191)
+  fiscalizacoes    fiscalizacao[]
+  logs             log_auditoria[]
+  obrasFiscais     obra_fiscal[]
+  processosReg     processo_regularizacao[]
 
   @@index([enderecoId], map: "usuario_enderecoId_fkey")
 }
 
 model orgao_publico {
-  id            Int             @id @default(autoincrement())
-  nome          String          @db.VarChar(45)
-  sigla         String          @db.VarChar(45)
-  enderecoId    Int?
-  endereco      endereco?       @relation(fields: [enderecoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  contas        conta_bancaria[]
-  verbas        verba_publica[]
+  id         Int              @id @default(autoincrement())
+  nome       String           @db.VarChar(45)
+  sigla      String           @db.VarChar(45)
+  enderecoId Int?
+  endereco   endereco?        @relation(fields: [enderecoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  contas     conta_bancaria[]
+  verbas     verba_publica[]
 
   @@index([enderecoId], map: "orgao_publico_enderecoId_fkey")
 }
 
 model verba_publica {
-  id               Int                @id @default(autoincrement())
-  valor            Decimal            @db.Decimal(12, 2)
-  origem           String             @db.VarChar(45)
-  finalidade       String             @db.VarChar(65)
-  orgaoId          Int
-  orgaoPublico     orgao_publico      @relation(fields: [orgaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  contratos        contrato[]
-  emendas          emenda_parlamentar[]
-  liberacoes       liberacao_recurso[]
-  projetosVerba    projeto_verba[]
+  id            Int                  @id @default(autoincrement())
+  valor         Decimal              @db.Decimal(12, 2)
+  origem        String               @db.VarChar(45)
+  finalidade    String               @db.VarChar(65)
+  orgaoId       Int
+  orgaoPublico  orgao_publico        @relation(fields: [orgaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  contratos     contrato[]
+  emendas       emenda_parlamentar[]
+  liberacoes    liberacao_recurso[]
+  projetosVerba projeto_verba[]
 
   @@index([orgaoId], map: "verba_publica_orgaoId_fkey")
 }
@@ -103,32 +110,32 @@ model emenda_parlamentar {
 }
 
 model projeto_obra {
-  id                 Int                  @id @default(autoincrement())
-  nome               String               @db.VarChar(45)
-  descricao          String               @db.VarChar(250)
-  finalidade         String               @db.VarChar(45)
-  enderecoId         Int
-  endereco           endereco             @relation(fields: [enderecoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  alertas            alerta_fiscalizacao[]
-  bloqueios          bloqueio_repasse[]
-  contas             conta_bancaria[]
-  contratos          contrato[]
-  etapas             etapa_cronograma[]
-  fiscalizacoes      fiscalizacao[]
-  obrasFiscais       obra_fiscal[]
-  projetosVerba      projeto_verba[]
+  id            Int                   @id @default(autoincrement())
+  nome          String                @db.VarChar(45)
+  descricao     String                @db.VarChar(250)
+  finalidade    String                @db.VarChar(45)
+  enderecoId    Int
+  endereco      endereco              @relation(fields: [enderecoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  alertas       alerta_fiscalizacao[]
+  bloqueios     bloqueio_repasse[]
+  contas        conta_bancaria[]
+  contratos     contrato[]
+  etapas        etapa_cronograma[]
+  fiscalizacoes fiscalizacao[]
+  obrasFiscais  obra_fiscal[]
+  projetosVerba projeto_verba[]
 
   @@index([enderecoId], map: "projeto_obra_enderecoId_fkey")
 }
 
 model projeto_verba {
-  id              Int           @id @default(autoincrement())
-  projetoObraId   Int
-  verbaPublicaId  Int
-  valorAlocado    Decimal       @db.Decimal(12, 2)
-  dataVinculacao  DateTime      @default(now()) @db.DateTime(0)
-  projetoObra     projeto_obra  @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  verbaPublica    verba_publica @relation(fields: [verbaPublicaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id             Int           @id @default(autoincrement())
+  projetoObraId  Int
+  verbaPublicaId Int
+  valorAlocado   Decimal       @db.Decimal(12, 2)
+  dataVinculacao DateTime      @default(now()) @db.DateTime(0)
+  projetoObra    projeto_obra  @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  verbaPublica   verba_publica @relation(fields: [verbaPublicaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([projetoObraId], map: "projeto_verba_projetoObraId_fkey")
   @@index([verbaPublicaId], map: "projeto_verba_verbaPublicaId_fkey")
@@ -155,13 +162,13 @@ model etapa_cronograma {
 }
 
 model liberacao_recurso {
-  id               Int              @id @default(autoincrement())
-  valorLiberacao   Decimal          @db.Decimal(12, 2)
-  dataLiberacao    DateTime         @db.Date
-  verbaPublicaId   Int
+  id                Int              @id @default(autoincrement())
+  valorLiberacao    Decimal          @db.Decimal(12, 2)
+  dataLiberacao     DateTime         @db.Date
+  verbaPublicaId    Int
   etapaCronogramaId Int
-  etapaCronograma  etapa_cronograma @relation(fields: [etapaCronogramaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  verbaPublica     verba_publica    @relation(fields: [verbaPublicaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  etapaCronograma   etapa_cronograma @relation(fields: [etapaCronogramaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  verbaPublica      verba_publica    @relation(fields: [verbaPublicaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([etapaCronogramaId], map: "liberacao_recurso_etapaCronogramaId_fkey")
   @@index([verbaPublicaId], map: "liberacao_recurso_verbaPublicaId_fkey")
@@ -182,19 +189,19 @@ model empresa {
 }
 
 model contrato {
-  id              Int           @id @default(autoincrement())
-  numeroContrato  String        @db.VarChar(45)
-  valorContrato   Decimal       @db.Decimal(12, 2)
-  dataAssinatura  DateTime      @db.Date
-  dataInicio      DateTime      @db.Date
-  dataFim         DateTime      @db.Date
-  projetoObraId   Int
-  empresaId       Int
-  verbaPublicaId  Int
-  empresa         empresa       @relation(fields: [empresaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  projetoObra     projeto_obra  @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  verbaPublica    verba_publica @relation(fields: [verbaPublicaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  pagamentos      pagamento[]
+  id             Int           @id @default(autoincrement())
+  numeroContrato String        @db.VarChar(45)
+  valorContrato  Decimal       @db.Decimal(12, 2)
+  dataAssinatura DateTime      @db.Date
+  dataInicio     DateTime      @db.Date
+  dataFim        DateTime      @db.Date
+  projetoObraId  Int
+  empresaId      Int
+  verbaPublicaId Int
+  empresa        empresa       @relation(fields: [empresaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  projetoObra    projeto_obra  @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  verbaPublica   verba_publica @relation(fields: [verbaPublicaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  pagamentos     pagamento[]
 
   @@index([empresaId], map: "contrato_empresaId_fkey")
   @@index([projetoObraId], map: "contrato_projetoObraId_fkey")
@@ -228,17 +235,17 @@ model obra_fiscal {
 }
 
 model fiscalizacao {
-  id                  Int                     @id @default(autoincrement())
-  dataVistoria        DateTime                @db.Date
-  percentualExecutado Decimal                 @db.Decimal(5, 2)
-  parecerTecnico      String                  @db.Text
-  statusVistoria      String                  @db.VarChar(45)
+  id                  Int                      @id @default(autoincrement())
+  dataVistoria        DateTime                 @db.Date
+  percentualExecutado Decimal                  @db.Decimal(5, 2)
+  parecerTecnico      String                   @db.Text
+  statusVistoria      String                   @db.VarChar(45)
   projetoObraId       Int
   usuarioId           Int
   etapaCronogramaId   Int
-  etapaCronograma     etapa_cronograma        @relation(fields: [etapaCronogramaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  projetoObra         projeto_obra            @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  usuario             usuario                 @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  etapaCronograma     etapa_cronograma         @relation(fields: [etapaCronogramaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  projetoObra         projeto_obra             @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  usuario             usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   alertas             alerta_fiscalizacao[]
   evidencias          evidencia_fiscalizacao[]
 
@@ -248,14 +255,14 @@ model fiscalizacao {
 }
 
 model evidencia_fiscalizacao {
-  id              Int          @id @default(autoincrement())
-  tipoEvidencia   String       @db.VarChar(45)
-  caminhoArquivo  String       @db.VarChar(255)
-  latitude        String       @db.VarChar(45)
-  longitude       String       @db.VarChar(45)
-  dataRegistro    DateTime     @default(now()) @db.DateTime(0)
-  fiscalizacaoId  Int
-  fiscalizacao    fiscalizacao @relation(fields: [fiscalizacaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id             Int          @id @default(autoincrement())
+  tipoEvidencia  String       @db.VarChar(45)
+  caminhoArquivo String       @db.VarChar(255)
+  latitude       String       @db.VarChar(45)
+  longitude      String       @db.VarChar(45)
+  dataRegistro   DateTime     @default(now()) @db.DateTime(0)
+  fiscalizacaoId Int
+  fiscalizacao   fiscalizacao @relation(fields: [fiscalizacaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([fiscalizacaoId], map: "evidencia_fiscalizacao_fiscalizacaoId_fkey")
 }
@@ -276,47 +283,47 @@ model conta_bancaria {
 }
 
 model alerta_fiscalizacao {
-  id              Int              @id @default(autoincrement())
-  tipoAlerta      String           @db.VarChar(50)
-  descricao       String           @db.Text
-  severidade      String           @db.VarChar(20)
-  dataGeracao     DateTime         @default(now()) @db.DateTime(0)
-  statusAlerta    String           @db.VarChar(30)
-  projetoObraId   Int
-  fiscalizacaoId  Int
-  fiscalizacao    fiscalizacao     @relation(fields: [fiscalizacaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  projetoObra     projeto_obra     @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  bloqueios       bloqueio_repasse[]
+  id             Int                @id @default(autoincrement())
+  tipoAlerta     String             @db.VarChar(50)
+  descricao      String             @db.Text
+  severidade     String             @db.VarChar(20)
+  dataGeracao    DateTime           @default(now()) @db.DateTime(0)
+  statusAlerta   String             @db.VarChar(30)
+  projetoObraId  Int
+  fiscalizacaoId Int
+  fiscalizacao   fiscalizacao       @relation(fields: [fiscalizacaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  projetoObra    projeto_obra       @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  bloqueios      bloqueio_repasse[]
 
   @@index([fiscalizacaoId], map: "alerta_fiscalizacao_fiscalizacaoId_fkey")
   @@index([projetoObraId], map: "alerta_fiscalizacao_projetoObraId_fkey")
 }
 
 model bloqueio_repasse {
-  id                    Int                     @id @default(autoincrement())
-  motivoBloqueio        String                  @db.Text
-  dataBloqueio          DateTime                @default(now()) @db.DateTime(0)
-  statusBloqueio        String                  @db.VarChar(30)
-  dataDesbloqueio       DateTime?               @db.DateTime(0)
-  projetoObraId         Int
-  alertaFiscalizacaoId  Int
-  alertaFiscalizacao    alerta_fiscalizacao     @relation(fields: [alertaFiscalizacaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  projetoObra           projeto_obra            @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  processosReg          processo_regularizacao[]
+  id                   Int                      @id @default(autoincrement())
+  motivoBloqueio       String                   @db.Text
+  dataBloqueio         DateTime                 @default(now()) @db.DateTime(0)
+  statusBloqueio       String                   @db.VarChar(30)
+  dataDesbloqueio      DateTime?                @db.DateTime(0)
+  projetoObraId        Int
+  alertaFiscalizacaoId Int
+  alertaFiscalizacao   alerta_fiscalizacao      @relation(fields: [alertaFiscalizacaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  projetoObra          projeto_obra             @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processosReg         processo_regularizacao[]
 
   @@index([alertaFiscalizacaoId], map: "bloqueio_repasse_alertaFiscalizacaoId_fkey")
   @@index([projetoObraId], map: "bloqueio_repasse_projetoObraId_fkey")
 }
 
 model processo_regularizacao {
-  id                    Int               @id @default(autoincrement())
+  id                     Int              @id @default(autoincrement())
   descricaoJustificativa String           @db.Text
-  dataEnvio             DateTime          @default(now()) @db.DateTime(0)
-  statusProcesso        String            @db.VarChar(30)
-  bloqueioRepasseId     Int
-  usuarioId             Int
-  bloqueioRepasse       bloqueio_repasse  @relation(fields: [bloqueioRepasseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  usuario               usuario           @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  dataEnvio              DateTime         @default(now()) @db.DateTime(0)
+  statusProcesso         String           @db.VarChar(30)
+  bloqueioRepasseId      Int
+  usuarioId              Int
+  bloqueioRepasse        bloqueio_repasse @relation(fields: [bloqueioRepasseId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  usuario                usuario          @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([bloqueioRepasseId], map: "processo_regularizacao_bloqueioRepasseId_fkey")
   @@index([usuarioId], map: "processo_regularizacao_usuarioId_fkey")

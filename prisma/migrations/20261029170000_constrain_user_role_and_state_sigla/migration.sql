@@ -1,0 +1,5 @@
+ALTER TABLE `usuario`
+    MODIFY `role` ENUM('ADMIN', 'FISCAL', 'GESTOR', 'USER') NOT NULL DEFAULT 'USER';
+
+ALTER TABLE `estado`
+    MODIFY `sigla` VARCHAR(2) NOT NULL;

@@ -1,24 +1,9 @@
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { UserService } from "@/services/user.service";
+import { getJwtSecret, signAccessToken } from "@/lib/auth-policy";
+import { parseLoginInput } from "@/lib/user-validation";
 
 const userService = new UserService();
-
-interface LoginPayload {
-  email: string;
-  senha: string;
-}
-
-function isLoginPayload(value: unknown): value is LoginPayload {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "email" in value &&
-    typeof value.email === "string" &&
-    "senha" in value &&
-    typeof value.senha === "string"
-  );
-}
 
 export async function POST(request: Request) {
   try {
@@ -32,30 +17,24 @@ export async function POST(request: Request) {
       );
     }
 
-    if (
-      !isLoginPayload(body) ||
-      !body.email.trim() ||
-      !body.senha
-    ) {
+    const credentials = parseLoginInput(body);
+    if (!credentials.success) {
       return NextResponse.json(
-        { error: "Email e senha são obrigatórios." },
+        { error: credentials.error },
         { status: 400 },
       );
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = getJwtSecret();
     if (!jwtSecret) {
-      console.error("JWT_SECRET não está configurado.");
+      console.error("JWT_SECRET ausente ou menor que 32 bytes.");
       return NextResponse.json(
         { error: "A autenticação não está configurada corretamente." },
         { status: 500 },
       );
     }
 
-    const user = await userService.authenticate({
-      email: body.email.trim(),
-      senha: body.senha,
-    });
+    const user = await userService.authenticate(credentials.data);
 
     if (!user) {
       return NextResponse.json(
@@ -64,10 +43,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const token = jwt.sign(
+    const token = signAccessToken(
       { id: user.id, email: user.email, role: user.role },
       jwtSecret,
-      { expiresIn: "12h" },
     );
     return NextResponse.json(
       {

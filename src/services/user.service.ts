@@ -48,7 +48,7 @@ export class UserService {
     //Garantir que o usuário existe antes de atualizar
     await this.findById(id);
 
-    const updatedData = data.senha
+    const updatedData = data.senha !== undefined
       ? { ...data, senha: await bcrypt.hash(data.senha, 10) }
       : data;
 

@@ -59,6 +59,16 @@ O aplicativo estará disponível acessando `http://localhost:3000` no seu navega
 
 Use `http://localhost:3000/api/users` como URL base e envie `Content-Type: application/json` nas requisições com corpo.
 
+O cadastro (`POST /api/users`) é público e sempre cria usuários com papel `USER`; o campo `role` não pode ser enviado. Os demais métodos de `/api/users` exigem um JWT no cabeçalho `Authorization: Bearer <token>` e, por enquanto, apenas `ADMIN` pode utilizá-los. O login em `POST /api/auth/login` é público.
+
+Para promover manualmente o primeiro usuário a administrador em um ambiente local, faça isso no phpMyAdmin após conferir o ID do usuário:
+
+```sql
+UPDATE usuario SET role = 'ADMIN' WHERE id = <ID_DO_USUARIO>;
+```
+
+Não exponha essa operação como endpoint público. O `.env` deve conter um `JWT_SECRET` aleatório com pelo menos 32 bytes.
+
 | Método | URL | Ação |
 |---|---|---|
 | GET | `/api/users` | Lista os usuários |
@@ -74,9 +84,10 @@ Exemplo de corpo para `POST /api/users`:
   "nome": "Ana Souza",
   "email": "ana@example.com",
   "senha": "SenhaForte123!",
-  "cpf": "12345678901",
-  "role": "USER"
+  "cpf": "12345678901"
 }
 \`\`\`
 
-`role` deve ser `ADMIN`, `FISCAL`, `GESTOR` ou `USER`. `cnpj`, `dataNascimento` (formato ISO 8601) e `enderecoId` são opcionais. O campo `senha` é armazenado com hash e nunca é incluído nas respostas.
+`cpf` deve conter 11 dígitos; `cnpj`, se informado, deve conter 14 dígitos. `dataNascimento` (formato ISO 8601) e `enderecoId` são opcionais. A senha deve conter ao menos 8 caracteres e no máximo 72 bytes. O campo `senha` é armazenado com hash e nunca é incluído nas respostas.
+
+Execute `npm test` para validar as regras de autenticação e os payloads de usuários.
