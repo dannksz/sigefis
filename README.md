@@ -38,9 +38,10 @@ DATABASE_URL="mysql://root:@localhost:3306/sigefis"
 \`\`\`
 
 ### 5. Executar as Migrações do Prisma
-O Prisma irá criar automaticamente a base de dados `sigefis` e todas as 20 tabelas estruturais no seu MySQL local:
+Crie primeiro a base de dados `sigefis` no MySQL (por exemplo, pelo phpMyAdmin). Depois aplique as migrations do projeto:
 \`\`\`bash
-npx prisma migrate dev --name init_sigefis
+npx prisma migrate dev
+npx prisma generate
 \`\`\`
 
 ### 6. Rodar o projeto em modo de desenvolvimento
@@ -48,3 +49,31 @@ npx prisma migrate dev --name init_sigefis
 npm run dev
 \`\`\`
 O aplicativo estará disponível acessando `http://localhost:3000` no seu navegador.
+
+---
+
+## API de usuários (Thunder Client)
+
+Use `http://localhost:3000/api/users` como URL base e envie `Content-Type: application/json` nas requisições com corpo.
+
+| Método | URL | Ação |
+|---|---|---|
+| GET | `/api/users` | Lista os usuários |
+| POST | `/api/users` | Cria um usuário |
+| GET | `/api/users/{id}` | Busca um usuário pelo ID |
+| PUT | `/api/users/{id}` | Atualiza os campos enviados |
+| DELETE | `/api/users/{id}` | Exclui um usuário |
+
+Exemplo de corpo para `POST /api/users`:
+
+\`\`\`json
+{
+  "nome": "Ana Souza",
+  "email": "ana@example.com",
+  "senha": "SenhaForte123!",
+  "cpf": "12345678901",
+  "role": "USER"
+}
+\`\`\`
+
+`role` deve ser `ADMIN`, `FISCAL`, `GESTOR` ou `USER`. `cnpj`, `dataNascimento` (formato ISO 8601) e `enderecoId` são opcionais. O campo `senha` é armazenado com hash e nunca é incluído nas respostas.
