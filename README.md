@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏛️ SIGEFIS - Sistema Integrado de Gestão e Fiscalização de Obras Públicas
 
-## Getting Started
+Sistema desenvolvido para garantir total rastreabilidade, transparência e conformidade legal na gestão de obras públicas.
 
-First, run the development server:
+## 🚀 Tecnologias Utilizadas
+- **Next.js** (Framework Frontend/Backend)
+- **Prisma 7** (ORM e Gestão de Base de Dados)
+- **MySQL (XAMPP)** (Base de dados relacional local)
+- **TypeScript** (Tipagem estática)
 
-```bash
+---
+
+## 📦 Como Executar o Projeto Localmente
+
+Siga o passo a passo abaixo para configurar e rodar o projeto na sua máquina:
+
+### 1. Pré-requisitos
+- Ter o Node.js instalado.
+- Ter o **XAMPP** instalado e com o serviço **MySQL** ativo.
+
+### 2. Clonar o repositório
+Abra o terminal na pasta onde deseja clonar o projeto e execute:
+\`\`\`bash
+git clone https://github.com/dannksz/sigefis.git
+cd sigefis
+\`\`\`
+
+### 3. Instalar as dependências
+Instale os pacotes do projeto (incluindo o Prisma e o cliente):
+\`\`\`bash
+npm install
+\`\`\`
+
+### 4. Configurar as Variáveis de Ambiente
+Crie um ficheiro chamado `.env` na raiz do projeto e adicione a string de conexão com o seu MySQL local (XAMPP):
+\`\`\`env
+DATABASE_URL="mysql://root:@localhost:3306/sigefis"
+\`\`\`
+
+### 5. Executar as Migrações do Prisma
+O Prisma irá criar automaticamente a base de dados `sigefis` e todas as 20 tabelas estruturais no seu MySQL local:
+\`\`\`bash
+npx prisma migrate dev --name init_sigefis
+\`\`\`
+
+### 6. Rodar o projeto em modo de desenvolvimento
+\`\`\`bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+\`\`\`
+O aplicativo estará disponível acessando `http://localhost:3000` no seu navegador.
