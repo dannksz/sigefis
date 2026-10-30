@@ -17,7 +17,7 @@ enum user_role {
 model estado {
   id      Int      @id @default(autoincrement())
   nome    String   @db.VarChar(45)
-  sigla   String   @db.VarChar(2)
+  sigla   String   @unique(map: "estado_sigla_key") @db.VarChar(2)
   regiao  String   @db.VarChar(45)
   cidades cidade[]
 }
