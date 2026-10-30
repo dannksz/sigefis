@@ -29,6 +29,7 @@ model cidade {
   estado    estado     @relation(fields: [estadoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   enderecos endereco[]
 
+  @@unique([nome, estadoId], map: "cidade_nome_estadoId_key")
   @@index([estadoId], map: "cidade_estadoId_fkey")
 }
 
