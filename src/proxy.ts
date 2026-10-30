@@ -39,7 +39,7 @@ export function proxy(request: NextRequest) {
   }
   if (!canManageUsers(claims.role)) {
     return NextResponse.json(
-      { error: "Você não tem permissão para gerenciar usuários." },
+      { error: "Você não tem permissão para acessar este recurso." },
       { status: 403 },
     );
   }
@@ -52,5 +52,6 @@ export const config = {
     "/api/users/:path*",
     "/api/estados/:path*",
     "/api/cidades/:path*",
+    "/api/enderecos/:path*",
   ],
 };
