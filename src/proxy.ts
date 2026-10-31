@@ -53,5 +53,6 @@ export const config = {
     "/api/estados/:path*",
     "/api/cidades/:path*",
     "/api/enderecos/:path*",
+    "/api/orgaos/:path*",
   ],
 };
