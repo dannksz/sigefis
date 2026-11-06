@@ -56,5 +56,6 @@ export const config = {
     "/api/orgaos/:path*",
     "/api/empresas/:path*",
     "/api/projetos/:path*",
+    "/api/contratos/:path*",
   ],
 };
