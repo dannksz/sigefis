@@ -55,5 +55,6 @@ export const config = {
     "/api/enderecos/:path*",
     "/api/orgaos/:path*",
     "/api/empresas/:path*",
+    "/api/projetos/:path*",
   ],
 };
