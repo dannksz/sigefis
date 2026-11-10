@@ -3,7 +3,9 @@ import { EtapaCronogramaService } from "@/services/etapa-cronograma.service";
 import { parseCreateEtapaCronogramaInput } from "@/lib/etapa-cronograma-validation";
 
 const service = new EtapaCronogramaService();
-const isProjetoNotFound = (e: unknown) => e instanceof Error && e.message === "Projeto não encontrado.";
+function isProjetoNotFound(e: unknown): e is Error {
+  return e instanceof Error && e.message === "Projeto não encontrado.";
+}
 
 export async function GET() {
   try { return NextResponse.json(await service.findAll()); }
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
   const input = parseCreateEtapaCronogramaInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try { return NextResponse.json(await service.create(input.data), { status: 201 }); }
-  catch (error) {
+  catch (error: unknown) {
     if (isProjetoNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao criar etapa:", error);
     return NextResponse.json({ error: "Erro interno ao criar etapa." }, { status: 500 });

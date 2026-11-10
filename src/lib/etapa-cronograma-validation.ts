@@ -13,7 +13,21 @@ function record(value: unknown): value is Record<string, unknown> {
 function id(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
-function date(value: unknown, nullable = false): value is string | null {
+function order(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 1;
+}
+function date(value: unknown): value is string {
+  if (typeof value !== "string" || !datePattern.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day;
+}
+function nullableDate(value: unknown): value is string | null | undefined {
+  if (value === null || value === undefined) return true;
+  return date(value);
+}
+function dateLegacy(value: unknown, nullable = false): value is string | null {
   if (nullable && value === undefined) return true;
   if (nullable && value === null) return true;
   if (typeof value !== "string" || !datePattern.test(value)) return false;
@@ -57,10 +71,10 @@ export function parseCreateEtapaCronogramaInput(value: unknown): Result<CreateEt
   const percentualPrevisto = decimal(value.percentualPrevisto);
   const percentualExecutado = decimal(value.percentualExecutado);
   if (!id(value.projetoObraId) || !typeofText(value.nomeEtapa, 45) ||
-      !Number.isSafeInteger(value.ordemEtapa) || value.ordemEtapa < 1 ||
+      !order(value.ordemEtapa) ||
       !percentualPrevisto || !percentualExecutado ||
       !date(value.dataInicioPrevista) || !date(value.dataFimPrevista) ||
-      !date(value.dataInicioReal, true) || !date(value.dataFimReal, true) ||
+      !nullableDate(value.dataInicioReal) || !nullableDate(value.dataFimReal) ||
       !typeofText(value.status, 45)) {
     return { success: false, error: "Informe dados válidos para a etapa do cronograma." };
   }
@@ -89,7 +103,9 @@ export function parseUpdateEtapaCronogramaInput(value: unknown): Result<UpdateEt
   if (!Object.keys(value).length) return { success: false, error: "Informe ao menos um campo para atualizar." };
   const data: UpdateEtapaCronogramaDTO = {};
   if ("projetoObraId" in value && !id(value.projetoObraId)) return { success: false, error: "Projeto inválido." };
-  if ("projetoObraId" in value) data.projetoObraId = value.projetoObraId;
+  if ("projetoObraId" in value) {
+    data.projetoObraId = value.projetoObraId as number;
+  }
   for (const field of ["nomeEtapa", "status"] as const) {
     if (field in value) {
       if (!typeofText(value[field], 45)) return { success: false, error: `${field} inválido.` };
@@ -97,7 +113,7 @@ export function parseUpdateEtapaCronogramaInput(value: unknown): Result<UpdateEt
     }
   }
   if ("ordemEtapa" in value) {
-    if (!Number.isSafeInteger(value.ordemEtapa) || value.ordemEtapa < 1) return { success: false, error: "Ordem da etapa inválida." };
+    if (!order(value.ordemEtapa)) return { success: false, error: "Ordem da etapa inválida." };
     data.ordemEtapa = value.ordemEtapa;
   }
   for (const field of ["percentualPrevisto", "percentualExecutado"] as const) {
@@ -109,8 +125,11 @@ export function parseUpdateEtapaCronogramaInput(value: unknown): Result<UpdateEt
   }
   for (const field of ["dataInicioPrevista", "dataFimPrevista", "dataInicioReal", "dataFimReal"] as const) {
     if (field in value) {
-      if (!date(value[field], field.endsWith("Real"))) return { success: false, error: `${field} inválida.` };
-      data[field] = value[field] as string | null;
+      if (!(field.endsWith("Real") ? nullableDate(value[field]) : date(value[field]))) return { success: false, error: `${field} inválida.` };
+      if (field === "dataInicioPrevista" && typeof value[field] === "string") data.dataInicioPrevista = value[field];
+      if (field === "dataFimPrevista" && typeof value[field] === "string") data.dataFimPrevista = value[field];
+      if (field === "dataInicioReal") data.dataInicioReal = typeof value[field] === "string" ? value[field] : null;
+      if (field === "dataFimReal") data.dataFimReal = typeof value[field] === "string" ? value[field] : null;
     }
   }
   return { success: true, data };

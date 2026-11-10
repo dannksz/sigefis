@@ -1,4 +1,4 @@
-import type { etapa_cronograma } from "@prisma/client";
+import type { etapa_cronograma, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
   CreateEtapaCronogramaDTO,
@@ -25,7 +25,30 @@ function response(item: etapa_cronograma): EtapaCronogramaResponseDTO {
   };
 }
 
-function toPrismaData(data: CreateEtapaCronogramaDTO | UpdateEtapaCronogramaDTO) {
+function toCreateData(
+  data: CreateEtapaCronogramaDTO,
+): Prisma.etapa_cronogramaUncheckedCreateInput {
+  return {
+    projetoObraId: data.projetoObraId,
+    nomeEtapa: data.nomeEtapa,
+    ordemEtapa: data.ordemEtapa,
+    percentualPrevisto: data.percentualPrevisto,
+    percentualExecutado: data.percentualExecutado,
+    dataInicioPrevista: date(data.dataInicioPrevista),
+    dataFimPrevista: date(data.dataFimPrevista),
+    ...(data.dataInicioReal !== undefined && {
+      dataInicioReal: data.dataInicioReal ? date(data.dataInicioReal) : null,
+    }),
+    ...(data.dataFimReal !== undefined && {
+      dataFimReal: data.dataFimReal ? date(data.dataFimReal) : null,
+    }),
+    status: data.status,
+  };
+}
+
+function toUpdateData(
+  data: UpdateEtapaCronogramaDTO,
+): Prisma.etapa_cronogramaUncheckedUpdateInput {
   return {
     ...(data.projetoObraId !== undefined && { projetoObraId: data.projetoObraId }),
     ...(data.nomeEtapa !== undefined && { nomeEtapa: data.nomeEtapa }),
@@ -54,7 +77,7 @@ function toPrismaData(data: CreateEtapaCronogramaDTO | UpdateEtapaCronogramaDTO)
 
 export class EtapaCronogramaRepository {
   async create(data: CreateEtapaCronogramaDTO) {
-    return response(await prisma.etapa_cronograma.create({ data: toPrismaData(data) }));
+    return response(await prisma.etapa_cronograma.create({ data: toCreateData(data) }));
   }
   async findAll() {
     return (await prisma.etapa_cronograma.findMany()).map(response);
@@ -64,7 +87,7 @@ export class EtapaCronogramaRepository {
     return item ? response(item) : null;
   }
   async update(id: number, values: UpdateEtapaCronogramaDTO) {
-    return response(await prisma.etapa_cronograma.update({ where: { id }, data: toPrismaData(values) }));
+    return response(await prisma.etapa_cronograma.update({ where: { id }, data: toUpdateData(values) }));
   }
   async delete(id: number) {
     await prisma.etapa_cronograma.delete({ where: { id } });
