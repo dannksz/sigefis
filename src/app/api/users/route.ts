@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { UserService } from '@/services/user.service';
 import { parseCreateUserInput } from '@/lib/user-validation';
+import {
+  isUserAddressForeignKeyError,
+  isUserEmailConflict,
+} from '@/lib/user-errors';
 
 const userService = new UserService();
 
@@ -35,10 +39,23 @@ export async function POST(request: Request) {
         return NextResponse.json(newUser, { status: 201 });
     } catch (error: unknown) {
         if (
-          error instanceof Error &&
-          error.message === 'Já existe um usuário cadastrado com esse e-mail.'
+          (error instanceof Error &&
+            error.message === 'Já existe um usuário cadastrado com esse e-mail.') ||
+          isUserEmailConflict(error)
         ) {
-          return NextResponse.json({ error: error.message }, { status: 409 });
+          return NextResponse.json(
+            { error: 'Já existe um usuário cadastrado com esse e-mail.' },
+            { status: 409 },
+          );
+        }
+        if (error instanceof Error && error.message === 'Endereço não encontrado.') {
+          return NextResponse.json({ error: error.message }, { status: 404 });
+        }
+        if (isUserAddressForeignKeyError(error)) {
+          return NextResponse.json(
+            { error: 'Endereço não encontrado.' },
+            { status: 404 },
+          );
         }
         console.error('Erro ao criar usuário:', error);
         return NextResponse.json({ error: 'Erro interno ao criar usuário.' }, { status: 500 });

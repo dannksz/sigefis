@@ -1,26 +1,28 @@
 import { UserRepository } from "../repositories/user.repository";
+import { EnderecoRepository } from "../repositories/endereco.repository";
 import { CreateUserDTO, UpdateUserDTO, UserResponseDTO } from "../types/user";
 import * as bcrypt from "bcryptjs";
 
 export class UserService {
   private userRepository: UserRepository;
+  private enderecoRepository: EnderecoRepository;
 
   constructor() {
     this.userRepository = new UserRepository();
+    this.enderecoRepository = new EnderecoRepository();
   }
 
-  // 1.Criar um novo usuário com validação de e-mail e hash de senha
   async create(data: CreateUserDTO): Promise<UserResponseDTO> {
-    // Verificar se já existe um usuário com este email
     const userExists = await this.userRepository.findByEmail(data.email);
     if (userExists) {
       throw new Error("Já existe um usuário cadastrado com esse e-mail.");
     }
 
-    //Criptografar a senha antes de mandar para o repositório 
-    const hashedPassword = await bcrypt.hash(data.senha, 10);
+    if (data.enderecoId !== undefined && data.enderecoId !== null) {
+      await this.ensureEnderecoExists(data.enderecoId);
+    }
 
-    //Substituir a senha limpa pela senha criptografada no DTO
+    const hashedPassword = await bcrypt.hash(data.senha, 10);
     const userDataToCreate = {
         ...data,
         senha: hashedPassword,
@@ -45,8 +47,18 @@ export class UserService {
 
   //4. Atualizar usuário
   async update(id:number, data: UpdateUserDTO): Promise<UserResponseDTO> {
-    //Garantir que o usuário existe antes de atualizar
     await this.findById(id);
+
+    if (data.email !== undefined) {
+      const userWithEmail = await this.userRepository.findByEmail(data.email);
+      if (userWithEmail && userWithEmail.id !== id) {
+        throw new Error("Já existe um usuário cadastrado com esse e-mail.");
+      }
+    }
+
+    if (data.enderecoId !== undefined && data.enderecoId !== null) {
+      await this.ensureEnderecoExists(data.enderecoId);
+    }
 
     const updatedData = data.senha !== undefined
       ? { ...data, senha: await bcrypt.hash(data.senha, 10) }
@@ -57,12 +69,10 @@ export class UserService {
 
   //5. Deletar usuário
   async delete(id:number): Promise<void> {
-    // Garantir que o usuário existe antes de deletar
     await this.findById(id);
     await this.userRepository.delete(id);
   }
 
-// 6. Autenticar usuário (Login)
   async authenticate(data: { email: string; senha: string }): Promise<UserResponseDTO | null> {
     const user = await this.userRepository.findByEmailForAuthentication(data.email);
     if (!user) {
@@ -75,5 +85,12 @@ export class UserService {
     }
 
     return user.user;
+  }
+
+  private async ensureEnderecoExists(enderecoId: number): Promise<void> {
+    const endereco = await this.enderecoRepository.findById(enderecoId);
+    if (!endereco) {
+      throw new Error("Endereço não encontrado.");
+    }
   }
 }
