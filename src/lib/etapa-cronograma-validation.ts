@@ -27,15 +27,6 @@ function nullableDate(value: unknown): value is string | null | undefined {
   if (value === null || value === undefined) return true;
   return date(value);
 }
-function dateLegacy(value: unknown, nullable = false): value is string | null {
-  if (nullable && value === undefined) return true;
-  if (nullable && value === null) return true;
-  if (typeof value !== "string" || !datePattern.test(value)) return false;
-  const [year, month, day] = value.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 &&
-    parsed.getUTCDate() === day;
-}
 function decimal(value: unknown): string | null {
   if (typeof value === "number") value = value.toFixed(2);
   if (typeof value !== "string" || !decimalPattern.test(value.trim())) return null;
