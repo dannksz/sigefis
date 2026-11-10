@@ -63,5 +63,6 @@ export const config = {
     "/api/etapas-cronograma/:path*",
     "/api/obras-fiscais/:path*",
     "/api/fiscalizacoes/:path*",
+    "/api/evidencias-fiscalizacao/:path*",
   ],
 };
