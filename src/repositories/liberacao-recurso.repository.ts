@@ -67,4 +67,11 @@ export class LiberacaoRecursoRepository {
     });
     return result._sum.valorLiberacao?.toString() ?? "0.00";
   }
+  async sumByEtapaAndVerba(etapaCronogramaId: number, verbaPublicaId: number): Promise<string> {
+    const result = await prisma.liberacao_recurso.aggregate({
+      _sum: { valorLiberacao: true },
+      where: { etapaCronogramaId, verbaPublicaId },
+    });
+    return result._sum.valorLiberacao?.toString() ?? "0.00";
+  }
 }
