@@ -60,5 +60,6 @@ export const config = {
     "/api/verbas-publicas/:path*",
     "/api/emendas-parlamentares/:path*",
     "/api/projetos-verbas/:path*",
+    "/api/etapas-cronograma/:path*",
   ],
 };
