@@ -59,5 +59,6 @@ export const config = {
     "/api/contratos/:path*",
     "/api/verbas-publicas/:path*",
     "/api/emendas-parlamentares/:path*",
+    "/api/projetos-verbas/:path*",
   ],
 };
