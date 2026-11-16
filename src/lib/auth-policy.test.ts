@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import jwt from "jsonwebtoken";
 import {
   canManageUsers,
+  canAccessResource,
   getBearerToken,
   getJwtSecret,
   isUserRole,
@@ -23,6 +24,17 @@ describe("user access policy", () => {
     expect(canManageUsers("GESTOR")).toBe(false);
     expect(canManageUsers("FISCAL")).toBe(false);
     expect(canManageUsers("USER")).toBe(false);
+  });
+
+  it("enforces resource permissions by role and method", () => {
+    expect(canAccessResource("ADMIN", "/api/pagamentos/1", "DELETE")).toBe(true);
+    expect(canAccessResource("GESTOR", "/api/projetos", "POST")).toBe(true);
+    expect(canAccessResource("GESTOR", "/api/fiscalizacoes", "POST")).toBe(false);
+    expect(canAccessResource("FISCAL", "/api/fiscalizacoes", "POST")).toBe(true);
+    expect(canAccessResource("FISCAL", "/api/pagamentos", "POST")).toBe(false);
+    expect(canAccessResource("USER", "/api/projetos/1", "GET")).toBe(true);
+    expect(canAccessResource("USER", "/api/projetos/1", "PUT")).toBe(false);
+    expect(canAccessResource("GESTOR", "/api/logs-auditoria", "GET")).toBe(false);
   });
 
   it("accepts only a well-formed bearer authorization header", () => {

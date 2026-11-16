@@ -25,6 +25,72 @@ export function canManageUsers(role: UserRole): boolean {
   return role === "ADMIN";
 }
 
+type Permission = "read" | "write";
+
+const readRoles: Record<string, UserRole[]> = {
+  "/api/estados": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/cidades": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/enderecos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/orgaos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/empresas": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/projetos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/contratos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/verbas-publicas": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/emendas-parlamentares": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/projetos-verbas": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/etapas-cronograma": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/obras-fiscais": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/fiscalizacoes": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/evidencias-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/liberacoes-recursos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/pagamentos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/contas-bancarias": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/alertas-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/bloqueios-repasse": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/processos-regularizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+};
+
+const writeRoles: Record<string, UserRole[]> = {
+  "/api/estados": ["ADMIN", "GESTOR"],
+  "/api/cidades": ["ADMIN", "GESTOR"],
+  "/api/enderecos": ["ADMIN", "GESTOR"],
+  "/api/orgaos": ["ADMIN", "GESTOR"],
+  "/api/empresas": ["ADMIN", "GESTOR"],
+  "/api/projetos": ["ADMIN", "GESTOR"],
+  "/api/contratos": ["ADMIN", "GESTOR"],
+  "/api/verbas-publicas": ["ADMIN", "GESTOR"],
+  "/api/emendas-parlamentares": ["ADMIN", "GESTOR"],
+  "/api/projetos-verbas": ["ADMIN", "GESTOR"],
+  "/api/etapas-cronograma": ["ADMIN", "GESTOR"],
+  "/api/obras-fiscais": ["ADMIN", "GESTOR"],
+  "/api/fiscalizacoes": ["ADMIN", "FISCAL"],
+  "/api/evidencias-fiscalizacao": ["ADMIN", "FISCAL"],
+  "/api/alertas-fiscalizacao": ["ADMIN", "FISCAL"],
+  "/api/processos-regularizacao": ["ADMIN", "FISCAL", "GESTOR"],
+  "/api/liberacoes-recursos": ["ADMIN", "GESTOR"],
+  "/api/pagamentos": ["ADMIN", "GESTOR"],
+  "/api/contas-bancarias": ["ADMIN", "GESTOR"],
+  "/api/bloqueios-repasse": ["ADMIN", "GESTOR"],
+};
+
+function resourcePath(pathname: string): string {
+  const segments = pathname.split("/");
+  return `/${segments[1]}/${segments[2]}`;
+}
+
+export function canAccessResource(
+  role: UserRole,
+  pathname: string,
+  method: string,
+): boolean {
+  if (role === "ADMIN") return true;
+  const resource = resourcePath(pathname);
+  const permission: Permission = method === "GET" ? "read" : "write";
+  const roles = permission === "read" ? readRoles[resource] : writeRoles[resource];
+  if (!roles?.includes(role)) return false;
+  return permission === "read" || method === "POST" || method === "PUT";
+}
+
 export function getBearerToken(header: string | null): string | null {
   if (!header) {
     return null;

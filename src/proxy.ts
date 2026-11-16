@@ -1,6 +1,8 @@
+import { after } from "next/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { auditMutationRequest } from "./lib/audit-request";
 import {
-  canManageUsers,
+  canAccessResource,
   getBearerToken,
   getJwtSecret,
   verifyAccessToken,
@@ -37,7 +39,7 @@ export function proxy(request: NextRequest) {
       { status: 401 },
     );
   }
-  if (!canManageUsers(claims.role)) {
+  if (!canAccessResource(claims.role, request.nextUrl.pathname, request.method)) {
     return NextResponse.json(
       { error: "Você não tem permissão para acessar este recurso." },
       { status: 403 },
@@ -52,6 +54,18 @@ export function proxy(request: NextRequest) {
       request.headers.get("x-real-ip") ||
       "unknown",
   );
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
+    const userId = claims.id;
+    const ipOrigem = requestHeaders.get("x-auth-client-ip") ?? "unknown";
+    const pathname = request.nextUrl.pathname;
+    const method = request.method;
+    after(() =>
+      auditMutationRequest({ method, pathname, usuarioId: userId, ipOrigem })
+        .catch((error: unknown) => {
+          console.error("Erro ao registrar auditoria automática:", error);
+        }),
+    );
+  }
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
