@@ -68,5 +68,6 @@ export const config = {
     "/api/pagamentos/:path*",
     "/api/contas-bancarias/:path*",
     "/api/alertas-fiscalizacao/:path*",
+    "/api/bloqueios-repasse/:path*",
   ],
 };
