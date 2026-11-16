@@ -1,65 +1,144 @@
-import { ContratoRepository } from "@/repositories/contrato.repository";
-import { EtapaCronogramaRepository } from "@/repositories/etapa-cronograma.repository";
-import { LiberacaoRecursoRepository } from "@/repositories/liberacao-recurso.repository";
+import prisma from "@/lib/prisma";
 import { PagamentoRepository } from "@/repositories/pagamento.repository";
-import type { CreatePagamentoDTO, PagamentoResponseDTO, UpdatePagamentoDTO } from "@/types/pagamento";
+import type {
+  CreatePagamentoDTO,
+  PagamentoResponseDTO,
+  UpdatePagamentoDTO,
+} from "@/types/pagamento";
 
 function cents(value: string): bigint {
   const [integer, decimal = ""] = value.split(".");
   return BigInt(integer) * BigInt("100") + BigInt(decimal.padEnd(2, "0"));
 }
+
+function assertFinancialLimits(
+  paid: string,
+  amount: string,
+  limit: string,
+  message: string,
+): void {
+  if (cents(paid) + cents(amount) > cents(limit)) throw new Error(message);
+}
+
 export class PagamentoService {
   private repository = new PagamentoRepository();
-  private contratoRepository = new ContratoRepository();
-  private etapaRepository = new EtapaCronogramaRepository();
-  private liberacaoRepository = new LiberacaoRecursoRepository();
 
-  private async ensureRules(data: {
-    contratoId: number; etapaCronogramaId: number; valorPagamento: string; numeroNotaFiscal: string;
-  }, excludeId?: number): Promise<void> {
-    const contrato = await this.contratoRepository.findById(data.contratoId);
-    if (!contrato) throw new Error("Contrato não encontrado.");
-    const etapa = await this.etapaRepository.findById(data.etapaCronogramaId);
-    if (!etapa) throw new Error("Etapa do cronograma não encontrada.");
-    if (contrato.projetoObraId !== etapa.projetoObraId) {
-      throw new Error("A etapa não pertence ao projeto do contrato.");
-    }
-    if (await this.repository.existsByInvoice(data.numeroNotaFiscal, excludeId)) {
-      throw new Error("A nota fiscal já está cadastrada.");
-    }
-    const totalContrato = cents(await this.repository.sumByContrato(data.contratoId, excludeId));
-    if (totalContrato + cents(data.valorPagamento) > cents(contrato.valorContrato)) {
-      throw new Error("O total de pagamentos excede o valor do contrato.");
-    }
-    const totalEtapa = cents(await this.repository.sumByEtapaAndVerba(
-      data.etapaCronogramaId, contrato.verbaPublicaId, excludeId,
-    ));
-    const liberado = cents(await this.liberacaoRepository.sumByEtapaAndVerba(
-      data.etapaCronogramaId, contrato.verbaPublicaId,
-    ));
-    if (totalEtapa + cents(data.valorPagamento) > liberado) {
-      throw new Error("O pagamento excede o recurso liberado para a etapa.");
-    }
-  }
   async create(data: CreatePagamentoDTO): Promise<PagamentoResponseDTO> {
-    await this.ensureRules(data);
-    return this.repository.create(data);
+    return prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM contrato WHERE id = ${data.contratoId} FOR UPDATE`;
+      const contrato = await tx.contrato.findUnique({ where: { id: data.contratoId } });
+      if (!contrato) throw new Error("Contrato não encontrado.");
+      const etapa = await tx.etapa_cronograma.findUnique({ where: { id: data.etapaCronogramaId } });
+      if (!etapa) throw new Error("Etapa do cronograma não encontrada.");
+      if (contrato.projetoObraId !== etapa.projetoObraId) {
+        throw new Error("A etapa não pertence ao projeto do contrato.");
+      }
+      const duplicate = await tx.pagamento.findFirst({
+        where: { numeroNotaFiscal: data.numeroNotaFiscal },
+        select: { id: true },
+      });
+      if (duplicate) throw new Error("A nota fiscal já está cadastrada.");
+      const paid = await tx.pagamento.aggregate({
+        _sum: { valorPagamento: true },
+        where: { contratoId: data.contratoId },
+      });
+      const paidForStage = await tx.pagamento.aggregate({
+        _sum: { valorPagamento: true },
+        where: {
+          etapaCronogramaId: data.etapaCronogramaId,
+          contrato: { verbaPublicaId: contrato.verbaPublicaId },
+        },
+      });
+      const released = await tx.liberacao_recurso.aggregate({
+        _sum: { valorLiberacao: true },
+        where: {
+          etapaCronogramaId: data.etapaCronogramaId,
+          verbaPublicaId: contrato.verbaPublicaId,
+        },
+      });
+      assertFinancialLimits(
+        paid._sum.valorPagamento?.toString() ?? "0.00",
+        data.valorPagamento,
+        contrato.valorContrato.toString(),
+        "O total de pagamentos excede o valor do contrato.",
+      );
+      assertFinancialLimits(
+        paidForStage._sum.valorPagamento?.toString() ?? "0.00",
+        data.valorPagamento,
+        released._sum.valorLiberacao?.toString() ?? "0.00",
+        "O pagamento excede o recurso liberado para a etapa.",
+      );
+      return this.repository.createWithClient(tx, data);
+    });
   }
-  findAll() { return this.repository.findAll(); }
+
+  findAll(): Promise<PagamentoResponseDTO[]> {
+    return this.repository.findAll();
+  }
+
   async findById(id: number): Promise<PagamentoResponseDTO> {
     const item = await this.repository.findById(id);
     if (!item) throw new Error("Pagamento não encontrado.");
     return item;
   }
+
   async update(id: number, data: UpdatePagamentoDTO): Promise<PagamentoResponseDTO> {
-    const current = await this.findById(id);
-    await this.ensureRules({
-      contratoId: data.contratoId ?? current.contratoId,
-      etapaCronogramaId: data.etapaCronogramaId ?? current.etapaCronogramaId,
-      valorPagamento: data.valorPagamento ?? current.valorPagamento,
-      numeroNotaFiscal: data.numeroNotaFiscal ?? current.numeroNotaFiscal,
-    }, id);
-    return this.repository.update(id, data);
+    return prisma.$transaction(async (tx) => {
+      const current = await tx.pagamento.findUnique({ where: { id } });
+      if (!current) throw new Error("Pagamento não encontrado.");
+      const contratoId = data.contratoId ?? current.contratoId;
+      const etapaCronogramaId = data.etapaCronogramaId ?? current.etapaCronogramaId;
+      const numeroNotaFiscal = data.numeroNotaFiscal ?? current.numeroNotaFiscal;
+      const valorPagamento = data.valorPagamento ?? current.valorPagamento.toString();
+      await tx.$queryRaw`SELECT id FROM contrato WHERE id = ${contratoId} FOR UPDATE`;
+      const contrato = await tx.contrato.findUnique({ where: { id: contratoId } });
+      if (!contrato) throw new Error("Contrato não encontrado.");
+      const etapa = await tx.etapa_cronograma.findUnique({ where: { id: etapaCronogramaId } });
+      if (!etapa) throw new Error("Etapa do cronograma não encontrada.");
+      if (contrato.projetoObraId !== etapa.projetoObraId) {
+        throw new Error("A etapa não pertence ao projeto do contrato.");
+      }
+      const duplicate = await tx.pagamento.findFirst({
+        where: { numeroNotaFiscal },
+        select: { id: true },
+      });
+      if (duplicate && duplicate.id !== id) {
+        throw new Error("A nota fiscal já está cadastrada.");
+      }
+      const paid = await tx.pagamento.aggregate({
+        _sum: { valorPagamento: true },
+        where: { contratoId, id: { not: id } },
+      });
+      const paidForStage = await tx.pagamento.aggregate({
+        _sum: { valorPagamento: true },
+        where: {
+          etapaCronogramaId,
+          id: { not: id },
+          contrato: { verbaPublicaId: contrato.verbaPublicaId },
+        },
+      });
+      const released = await tx.liberacao_recurso.aggregate({
+        _sum: { valorLiberacao: true },
+        where: { etapaCronogramaId, verbaPublicaId: contrato.verbaPublicaId },
+      });
+      assertFinancialLimits(
+        paid._sum.valorPagamento?.toString() ?? "0.00",
+        valorPagamento,
+        contrato.valorContrato.toString(),
+        "O total de pagamentos excede o valor do contrato.",
+      );
+      assertFinancialLimits(
+        paidForStage._sum.valorPagamento?.toString() ?? "0.00",
+        valorPagamento,
+        released._sum.valorLiberacao?.toString() ?? "0.00",
+        "O pagamento excede o recurso liberado para a etapa.",
+      );
+      return this.repository.updateWithClient(tx, id, data);
+    });
   }
-  async delete(id: number) { await this.findById(id); return this.repository.delete(id); }
+
+  async delete(id: number): Promise<void> {
+    await this.findById(id);
+    return this.repository.delete(id);
+  }
 }

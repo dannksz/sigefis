@@ -22,6 +22,7 @@ export async function PUT(request: Request, { params }: Params) {
   try { return NextResponse.json(await service.update(id, input.data)); } catch (error: unknown) {
     if (error instanceof Error && notFound.includes(error.message)) return NextResponse.json({ error: error.message }, { status: 404 });
     if (error instanceof Error && conflict.includes(error.message)) return NextResponse.json({ error: error.message }, { status: 409 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return NextResponse.json({ error: "A nota fiscal já está cadastrada." }, { status: 409 });
     console.error("Erro ao atualizar pagamento:", error); return NextResponse.json({ error: "Erro interno ao atualizar pagamento." }, { status: 500 });
   }
 }

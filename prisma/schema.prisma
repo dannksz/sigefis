@@ -221,6 +221,7 @@ model pagamento {
 
   @@index([contratoId], map: "pagamento_contratoId_fkey")
   @@index([etapaCronogramaId], map: "pagamento_etapaCronogramaId_fkey")
+  @@unique([numeroNotaFiscal])
 }
 
 model obra_fiscal {

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { parseCreatePagamentoInput } from "@/lib/pagamento-validation";
 import { PagamentoService } from "@/services/pagamento.service";
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
   catch (error: unknown) {
     if (error instanceof Error && notFound.includes(error.message)) return NextResponse.json({ error: error.message }, { status: 404 });
     if (error instanceof Error && ["A nota fiscal já está cadastrada.", "O total de pagamentos excede o valor do contrato.", "O pagamento excede o recurso liberado para a etapa."].includes(error.message)) return NextResponse.json({ error: error.message }, { status: 409 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return NextResponse.json({ error: "A nota fiscal já está cadastrada." }, { status: 409 });
     console.error("Erro ao criar pagamento:", error); return NextResponse.json({ error: "Erro interno ao criar pagamento." }, { status: 500 });
   }
 }

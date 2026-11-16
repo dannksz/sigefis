@@ -44,7 +44,15 @@ export function proxy(request: NextRequest) {
     );
   }
 
-  return NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-auth-user-id", String(claims.id));
+  requestHeaders.set(
+    "x-auth-client-ip",
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown",
+  );
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
@@ -70,5 +78,6 @@ export const config = {
     "/api/alertas-fiscalizacao/:path*",
     "/api/bloqueios-repasse/:path*",
     "/api/processos-regularizacao/:path*",
+    "/api/logs-auditoria/:path*",
   ],
 };

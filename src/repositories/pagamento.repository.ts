@@ -29,6 +29,9 @@ function updateData(data: UpdatePagamentoDTO): Prisma.pagamentoUncheckedUpdateIn
 }
 export class PagamentoRepository {
   async create(data: CreatePagamentoDTO) { return response(await prisma.pagamento.create({ data: createData(data) })); }
+  async createWithClient(client: Prisma.TransactionClient, data: CreatePagamentoDTO) {
+    return response(await client.pagamento.create({ data: createData(data) }));
+  }
   async findAll() { return (await prisma.pagamento.findMany()).map(response); }
   async findById(id: number) {
     const item = await prisma.pagamento.findUnique({ where: { id } });
@@ -36,6 +39,9 @@ export class PagamentoRepository {
   }
   async update(id: number, data: UpdatePagamentoDTO) {
     return response(await prisma.pagamento.update({ where: { id }, data: updateData(data) }));
+  }
+  async updateWithClient(client: Prisma.TransactionClient, id: number, data: UpdatePagamentoDTO) {
+    return response(await client.pagamento.update({ where: { id }, data: updateData(data) }));
   }
   async delete(id: number) { await prisma.pagamento.delete({ where: { id } }); }
   async sumByContrato(contratoId: number, excludeId?: number): Promise<string> {
