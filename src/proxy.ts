@@ -66,5 +66,6 @@ export const config = {
     "/api/evidencias-fiscalizacao/:path*",
     "/api/liberacoes-recursos/:path*",
     "/api/pagamentos/:path*",
+    "/api/contas-bancarias/:path*",
   ],
 };
