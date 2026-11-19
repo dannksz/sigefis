@@ -23,6 +23,18 @@ function isText(value: unknown, maxLength: number): value is string {
   );
 }
 
+export function isValidLatitude(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const parsed = Number(value);
+  return /^-?\d+(?:\.\d+)?$/.test(value) && parsed >= -90 && parsed <= 90;
+}
+
+export function isValidLongitude(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const parsed = Number(value);
+  return /^-?\d+(?:\.\d+)?$/.test(value) && parsed >= -180 && parsed <= 180;
+}
+
 const fields = [
   "tipoEvidencia",
   "caminhoArquivo",
@@ -44,8 +56,8 @@ export function parseCreateEvidenciaFiscalizacaoInput(
   if (
     !isText(value.tipoEvidencia, 45) ||
     !isText(value.caminhoArquivo, 255) ||
-    !isText(value.latitude, 45) ||
-    !isText(value.longitude, 45) ||
+    !isValidLatitude(value.latitude) ||
+    !isValidLongitude(value.longitude) ||
     !isId(value.fiscalizacaoId)
   ) {
     return { success: false, error: "Informe dados válidos para a evidência." };
@@ -74,6 +86,12 @@ export function parseUpdateEvidenciaFiscalizacaoInput(
   const data: UpdateEvidenciaFiscalizacaoDTO = {};
   for (const field of ["tipoEvidencia", "caminhoArquivo", "latitude", "longitude"] as const) {
     if (field in value) {
+      if (field === "latitude" && !isValidLatitude(value[field])) {
+        return { success: false, error: "Latitude inválida." };
+      }
+      if (field === "longitude" && !isValidLongitude(value[field])) {
+        return { success: false, error: "Longitude inválida." };
+      }
       if (!isText(value[field], field === "caminhoArquivo" ? 255 : 45)) {
         return { success: false, error: `Campo ${field} inválido.` };
       }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { EvidenciaFiscalizacaoService } from "@/services/evidencia-fiscalizacao.service";
 import { parseUpdateEvidenciaFiscalizacaoInput } from "@/lib/evidencia-fiscalizacao-validation";
+import { deleteEvidenceFile } from "@/lib/evidencia-upload";
 
 const service = new EvidenciaFiscalizacaoService();
 interface Params {
@@ -55,6 +56,8 @@ export async function DELETE(_request: Request, { params }: Params) {
   const id = parseId((await params).id);
   if (id === null) return NextResponse.json({ error: "ID de evidência inválido." }, { status: 400 });
   try {
+    const evidence = await service.findById(id);
+    await deleteEvidenceFile(evidence.caminhoArquivo);
     await service.delete(id);
     return NextResponse.json({ message: "Evidência excluída com sucesso." });
   } catch (error: unknown) {
