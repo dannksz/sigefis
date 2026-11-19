@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { UserService } from "@/services/user.service";
 import { getJwtSecret, signAccessToken } from "@/lib/auth-policy";
 import { parseLoginInput } from "@/lib/user-validation";
+import { auditSuccess } from "@/lib/audit-request";
 
 const userService = new UserService();
 
@@ -47,6 +48,19 @@ export async function POST(request: Request) {
       { id: user.id, email: user.email, role: user.role },
       jwtSecret,
     );
+    await auditSuccess({
+      acao: "LOGIN",
+      pathname: "/api/auth/login",
+      usuarioId: user.id,
+      ipOrigem:
+        request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+        request.headers.get("x-real-ip") ||
+        "unknown",
+      registroId: user.id,
+      detalhes: { role: user.role },
+    }).catch((error: unknown) => {
+      console.error("Erro ao registrar auditoria de login:", error);
+    });
     return NextResponse.json(
       {
         message: "Login efetuado com sucesso!",

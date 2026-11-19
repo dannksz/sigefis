@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { parseCreatePagamentoInput } from "@/lib/pagamento-validation";
 import { PagamentoService } from "@/services/pagamento.service";
+import { auditSuccess } from "@/lib/audit-request";
 
 const service = new PagamentoService();
 const notFound = ["Contrato não encontrado.", "Etapa do cronograma não encontrada.", "A etapa não pertence ao projeto do contrato."];
@@ -18,7 +19,17 @@ export async function POST(request: Request) {
   if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) {
     return NextResponse.json({ error: "Usuário autenticado inválido." }, { status: 401 });
   }
-  try { return NextResponse.json(await service.create(input.data, usuarioId), { status: 201 }); }
+  try {
+    const result = await service.create(input.data, usuarioId);
+    await auditSuccess({
+      acao: "CRIAR_PAGAMENTO",
+      pathname: "/api/pagamentos",
+      usuarioId,
+      ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
+      registroId: result.id,
+    }).catch((error: unknown) => console.error("Erro ao auditar pagamento:", error));
+    return NextResponse.json(result, { status: 201 });
+  }
   catch (error: unknown) {
     if (error instanceof Error && notFound.includes(error.message)) return NextResponse.json({ error: error.message }, { status: 404 });
     if (error instanceof Error && ["A nota fiscal já está cadastrada.", "O total de pagamentos excede o valor do contrato.", "O pagamento excede o recurso liberado para a etapa."].includes(error.message)) return NextResponse.json({ error: error.message }, { status: 409 });

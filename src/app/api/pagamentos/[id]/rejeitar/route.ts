@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PagamentoService } from "@/services/pagamento.service";
+import { auditSuccess } from "@/lib/audit-request";
 
 const service = new PagamentoService();
 
@@ -33,9 +34,16 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Usuário autenticado inválido." }, { status: 401 });
   }
   try {
-    return NextResponse.json(
-      await service.reject(id, usuarioId, body.justificativa.trim()),
-    );
+    const result = await service.reject(id, usuarioId, body.justificativa.trim());
+    await auditSuccess({
+      acao: "REJEITAR_PAGAMENTO",
+      pathname: `/api/pagamentos/${id}/rejeitar`,
+      usuarioId,
+      ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
+      registroId: id,
+      detalhes: { justificativa: body.justificativa.trim() },
+    }).catch((error: unknown) => console.error("Erro ao auditar rejeição:", error));
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (error instanceof Error) {
       if (error.message === "Pagamento não encontrado.") {

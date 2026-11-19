@@ -21,34 +21,43 @@ const resourceNames: Record<string, string> = {
   "alertas-fiscalizacao": "alerta_fiscalizacao",
   "bloqueios-repasse": "bloqueio_repasse",
   "processos-regularizacao": "processo_regularizacao",
+  "decisoes-financeiras": "decisao_financeira",
+  "revisoes-fiscalizacao": "revisao_fiscalizacao",
+  "logs-auditoria": "log_auditoria",
 };
 
-function getResource(pathname: string): { table: string; registroId: number } {
+export function getAuditResource(pathname: string): {
+  tabelaAfetada: string;
+  registroId: number;
+} {
   const segments = pathname.split("/").filter(Boolean);
   const resource = segments[1] ?? "unknown";
   const parsedId = Number(segments[2]);
   return {
-    table: resourceNames[resource] ?? resource,
+    tabelaAfetada: resourceNames[resource] ?? resource,
     registroId: Number.isSafeInteger(parsedId) && parsedId > 0 ? parsedId : 0,
   };
 }
 
-export async function auditMutationRequest(input: {
-  method: string;
+export async function auditSuccess(input: {
+  acao: string;
   pathname: string;
   usuarioId: number;
   ipOrigem: string;
+  registroId?: number;
+  detalhes?: Record<string, unknown>;
 }): Promise<void> {
-  const resource = getResource(input.pathname);
+  const resource = getAuditResource(input.pathname);
   await prisma.log_auditoria.create({
     data: {
-      acao: `REQUEST_${input.method}`,
-      tabelaAfetada: resource.table,
-      registroId: resource.registroId,
+      acao: input.acao,
+      tabelaAfetada: resource.tabelaAfetada,
+      registroId: input.registroId ?? resource.registroId,
       detalhes: JSON.stringify({
-        tipo: "mutation_request",
-        status: "accepted_by_authorization",
+        tipo: "operation_completed",
+        status: "success",
         rota: input.pathname,
+        ...(input.detalhes ?? {}),
       }),
       ipOrigem: input.ipOrigem,
       usuarioId: input.usuarioId,

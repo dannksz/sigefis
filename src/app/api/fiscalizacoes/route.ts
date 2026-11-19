@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { FiscalizacaoService } from "@/services/fiscalizacao.service";
 import { parseCreateFiscalizacaoInput } from "@/lib/fiscalizacao-validation";
+import { auditSuccess } from "@/lib/audit-request";
 
 const service = new FiscalizacaoService();
 
@@ -43,7 +44,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: input.error }, { status: 400 });
   }
   try {
-    return NextResponse.json(await service.create(input.data), { status: 201 });
+    const result = await service.create(input.data);
+    const usuarioId = Number(request.headers.get("x-auth-user-id"));
+    if (Number.isSafeInteger(usuarioId) && usuarioId > 0) {
+      await auditSuccess({
+        acao: "CRIAR_FISCALIZACAO",
+        pathname: "/api/fiscalizacoes",
+        usuarioId,
+        ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
+        registroId: result.id,
+      }).catch((error: unknown) => console.error("Erro ao auditar fiscalização:", error));
+    }
+    return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (isReferenceError(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseCreateLiberacaoRecursoInput } from "@/lib/liberacao-recurso-validation";
 import { LiberacaoRecursoService } from "@/services/liberacao-recurso.service";
+import { auditSuccess } from "@/lib/audit-request";
 
 const service = new LiberacaoRecursoService();
 
@@ -22,7 +23,17 @@ export async function POST(request: Request) {
   if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) {
     return NextResponse.json({ error: "Usuário autenticado inválido." }, { status: 401 });
   }
-  try { return NextResponse.json(await service.create(input.data, usuarioId), { status: 201 }); }
+  try {
+    const result = await service.create(input.data, usuarioId);
+    await auditSuccess({
+      acao: "CRIAR_LIBERACAO",
+      pathname: "/api/liberacoes-recursos",
+      usuarioId,
+      ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
+      registroId: result.id,
+    }).catch((error: unknown) => console.error("Erro ao auditar liberação:", error));
+    return NextResponse.json(result, { status: 201 });
+  }
   catch (error: unknown) {
     if (error instanceof Error && [
       "Etapa do cronograma não encontrada.",

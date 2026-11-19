@@ -1,6 +1,4 @@
-import { after } from "next/server";
 import { NextResponse, type NextRequest } from "next/server";
-import { auditMutationRequest } from "./lib/audit-request";
 import {
   canAccessResource,
   canApproveFinancialOperation,
@@ -65,18 +63,6 @@ export function proxy(request: NextRequest) {
       request.headers.get("x-real-ip") ||
       "unknown",
   );
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) {
-    const userId = claims.id;
-    const ipOrigem = requestHeaders.get("x-auth-client-ip") ?? "unknown";
-    const pathname = request.nextUrl.pathname;
-    const method = request.method;
-    after(() =>
-      auditMutationRequest({ method, pathname, usuarioId: userId, ipOrigem })
-        .catch((error: unknown) => {
-          console.error("Erro ao registrar auditoria automática:", error);
-        }),
-    );
-  }
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 

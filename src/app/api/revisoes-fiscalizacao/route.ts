@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseCreateRevisaoFiscalizacaoInput } from "@/lib/revisao-fiscalizacao-validation";
 import { RevisaoFiscalizacaoService } from "@/services/revisao-fiscalizacao.service";
+import { auditSuccess } from "@/lib/audit-request";
 
 const service = new RevisaoFiscalizacaoService();
 
@@ -23,7 +24,19 @@ export async function POST(request: Request) {
   const input = parseCreateRevisaoFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
-    return NextResponse.json(await service.create(input.data), { status: 201 });
+    const result = await service.create(input.data);
+    const usuarioId = Number(request.headers.get("x-auth-user-id"));
+    if (Number.isSafeInteger(usuarioId) && usuarioId > 0) {
+      await auditSuccess({
+        acao: "CRIAR_REVISAO_FISCALIZACAO",
+        pathname: "/api/revisoes-fiscalizacao",
+        usuarioId,
+        ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
+        registroId: result.id,
+        detalhes: { fiscalizacaoId: result.fiscalizacaoId, statusRevisao: result.statusRevisao },
+      }).catch((error: unknown) => console.error("Erro ao auditar revisão:", error));
+    }
+    return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (error instanceof Error && [
       "Fiscalização não encontrada.",

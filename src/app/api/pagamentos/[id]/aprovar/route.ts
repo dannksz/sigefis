@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PagamentoService } from "@/services/pagamento.service";
+import { auditSuccess } from "@/lib/audit-request";
 
 const service = new PagamentoService();
 
@@ -17,9 +18,15 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Usuário autenticado inválido." }, { status: 401 });
   }
   try {
-    return NextResponse.json(
-      await service.approve(id, aprovadoPorUsuarioId),
-    );
+    const result = await service.approve(id, aprovadoPorUsuarioId);
+    await auditSuccess({
+      acao: "APROVAR_PAGAMENTO",
+      pathname: `/api/pagamentos/${id}/aprovar`,
+      usuarioId: aprovadoPorUsuarioId,
+      ipOrigem: _request.headers.get("x-auth-client-ip") || "unknown",
+      registroId: id,
+    }).catch((error: unknown) => console.error("Erro ao auditar aprovação:", error));
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (error instanceof Error && [
       "Pagamento não encontrado.",

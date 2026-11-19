@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { LiberacaoRecursoService } from "@/services/liberacao-recurso.service";
+import { auditSuccess } from "@/lib/audit-request";
 
 const service = new LiberacaoRecursoService();
 
@@ -17,9 +18,15 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Usuário autenticado inválido." }, { status: 401 });
   }
   try {
-    return NextResponse.json(
-      await service.approve(id, aprovadoPorUsuarioId),
-    );
+    const result = await service.approve(id, aprovadoPorUsuarioId);
+    await auditSuccess({
+      acao: "APROVAR_LIBERACAO",
+      pathname: `/api/liberacoes-recursos/${id}/aprovar`,
+      usuarioId: aprovadoPorUsuarioId,
+      ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
+      registroId: id,
+    }).catch((error: unknown) => console.error("Erro ao auditar aprovação:", error));
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (error instanceof Error && [
       "Liberação de recurso não encontrada.",
