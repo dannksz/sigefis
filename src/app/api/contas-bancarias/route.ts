@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { parseCreateContaBancariaInput } from "@/lib/conta-bancaria-validation";
 import { ContaBancariaService } from "@/services/conta-bancaria.service";
+import {
+  getResponseRole,
+  sanitizeContaBancariaList,
+} from "@/lib/response-sanitizer";
 
 const service = new ContaBancariaService();
 const referenceErrors = [
@@ -8,9 +12,12 @@ const referenceErrors = [
   "Projeto não encontrado.",
 ];
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return NextResponse.json(await service.findAll());
+    const items = await service.findAll();
+    return NextResponse.json(
+      sanitizeContaBancariaList(items, getResponseRole(request)),
+    );
   } catch (error: unknown) {
     console.error("Erro ao listar contas bancárias:", error);
     return NextResponse.json(

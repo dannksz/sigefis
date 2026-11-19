@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { EmpresaService } from "@/services/empresa.service";
 import { parseUpdateEmpresaInput } from "@/lib/empresa-validation";
 import { isEmpresaCnpjConflict } from "@/lib/empresa-errors";
+import {
+  getResponseRole,
+  sanitizeEmpresa,
+} from "@/lib/response-sanitizer";
 
 const empresaService = new EmpresaService();
 
@@ -25,7 +29,7 @@ function isEnderecoNotFound(error: unknown): error is Error {
   return error instanceof Error && error.message === "Endereço não encontrado.";
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { id: rawId } = await params;
   const id = parseEmpresaId(rawId);
 
@@ -38,7 +42,10 @@ export async function GET(_request: Request, { params }: Params) {
 
   try {
     const empresa = await empresaService.findById(id);
-    return NextResponse.json(empresa, { status: 200 });
+    return NextResponse.json(
+      sanitizeEmpresa(empresa, getResponseRole(request)),
+      { status: 200 },
+    );
   } catch (error: unknown) {
     if (isEmpresaNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });

@@ -2,6 +2,10 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { parseUpdateContaBancariaInput } from "@/lib/conta-bancaria-validation";
 import { ContaBancariaService } from "@/services/conta-bancaria.service";
+import {
+  getResponseRole,
+  sanitizeContaBancaria,
+} from "@/lib/response-sanitizer";
 
 const service = new ContaBancariaService();
 const referenceErrors = [
@@ -25,7 +29,7 @@ function isNotFound(error: unknown): error is Error {
   );
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const id = parseId((await params).id);
   if (id === null) {
     return NextResponse.json(
@@ -35,7 +39,10 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   try {
-    return NextResponse.json(await service.findById(id));
+    const item = await service.findById(id);
+    return NextResponse.json(
+      sanitizeContaBancaria(item, getResponseRole(request)),
+    );
   } catch (error: unknown) {
     if (isNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });

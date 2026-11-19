@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { EmpresaService } from "@/services/empresa.service";
 import { parseCreateEmpresaInput } from "@/lib/empresa-validation";
 import { isEmpresaCnpjConflict } from "@/lib/empresa-errors";
+import {
+  getResponseRole,
+  sanitizeEmpresaList,
+} from "@/lib/response-sanitizer";
 
 const empresaService = new EmpresaService();
 
@@ -9,10 +13,13 @@ function isEnderecoNotFound(error: unknown): error is Error {
   return error instanceof Error && error.message === "Endereço não encontrado.";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const empresas = await empresaService.findAll();
-    return NextResponse.json(empresas, { status: 200 });
+    return NextResponse.json(
+      sanitizeEmpresaList(empresas, getResponseRole(request)),
+      { status: 200 },
+    );
   } catch (error: unknown) {
     console.error("Erro ao listar empresas:", error);
     return NextResponse.json(

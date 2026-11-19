@@ -57,6 +57,7 @@ export function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-auth-user-id", String(claims.id));
+  requestHeaders.set("x-auth-role", claims.role);
   requestHeaders.set(
     "x-auth-client-ip",
     request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
