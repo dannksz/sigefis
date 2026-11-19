@@ -59,6 +59,24 @@ export class LiberacaoRecursoService {
     if (current.criadoPorUsuarioId === aprovadoPorUsuarioId) {
       throw new Error("Quem criou a liberação não pode aprová-la.");
     }
+    const etapa = await prisma.etapa_cronograma.findUnique({
+      where: { id: current.etapaCronogramaId },
+      select: { projetoObraId: true },
+    });
+    if (!etapa) throw new Error("Etapa do cronograma não encontrada.");
+    const approvedInspection = await prisma.revisao_fiscalizacao.findFirst({
+      where: {
+        statusRevisao: "APROVADA",
+        fiscalizacao: {
+          etapaCronogramaId: current.etapaCronogramaId,
+          projetoObraId: etapa.projetoObraId,
+        },
+      },
+      select: { id: true },
+    });
+    if (!approvedInspection) {
+      throw new Error("A liberação exige fiscalização revisada externamente.");
+    }
     await prisma.$transaction(async (tx) => {
       await tx.liberacao_recurso.update({
         where: { id },

@@ -38,7 +38,28 @@ export class RevisaoFiscalizacaoService {
     if (!designacao) {
       throw new Error("O fiscal externo não está designado para esta obra.");
     }
-    return this.repository.create(data);
+    const result = await prisma.$transaction(async (tx) => {
+      const revision = await tx.revisao_fiscalizacao.create({
+        data,
+      });
+      const statusVistoria =
+        data.statusRevisao === "APROVADA"
+          ? "APROVADA"
+          : data.statusRevisao === "CONTESTADA"
+            ? "CONTESTADA"
+            : data.statusRevisao === "CORRECAO_SOLICITADA"
+              ? "CORRECAO_SOLICITADA"
+              : "PENDENTE_REVISAO";
+      await tx.fiscalizacao.update({
+        where: { id: data.fiscalizacaoId },
+        data: { statusVistoria },
+      });
+      return revision;
+    });
+    return this.repository.findById(result.id).then((item) => {
+      if (!item) throw new Error("Revisão de fiscalização não encontrada.");
+      return item;
+    });
   }
 
   findAll(): Promise<RevisaoFiscalizacaoResponseDTO[]> {

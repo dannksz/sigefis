@@ -20,6 +20,9 @@ export async function PUT(request: Request, { params }: Params) {
   let body: unknown; try { body = await request.json(); } catch { return NextResponse.json({ error: "O corpo da requisição deve ser um JSON válido." }, { status: 400 }); }
   const input = parseUpdatePagamentoInput(body); if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try { return NextResponse.json(await service.update(id, input.data)); } catch (error: unknown) {
+    if (error instanceof Error && error.message === "A etapa precisa de fiscalização revisada externamente.") {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     if (error instanceof Error && error.message === "Operação já decidida não pode ser alterada.") {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }

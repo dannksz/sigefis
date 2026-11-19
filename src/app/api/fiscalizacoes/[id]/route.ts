@@ -59,6 +59,9 @@ export async function PUT(request: Request, { params }: Params) {
   try {
     return NextResponse.json(await service.update(id, input.data));
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === "Fiscalização já revisada não pode ser alterada.") {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     if (isNotFound(error) || isReferenceError(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
@@ -76,6 +79,9 @@ export async function DELETE(_request: Request, { params }: Params) {
     await service.delete(id);
     return NextResponse.json({ message: "Fiscalização excluída com sucesso." });
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === "Fiscalização já revisada não pode ser excluída.") {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

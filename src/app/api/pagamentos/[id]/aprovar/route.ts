@@ -29,6 +29,12 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json(result);
   } catch (error: unknown) {
     if (error instanceof Error && [
+      "A etapa precisa de fiscalização revisada externamente.",
+      "O pagamento exige liberação de recurso aprovada.",
+    ].includes(error.message)) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof Error && [
       "Pagamento não encontrado.",
       "Quem criou o pagamento não pode aprová-lo.",
       "O pagamento não está pendente.",

@@ -7,6 +7,7 @@ import type {
   FiscalizacaoResponseDTO,
   UpdateFiscalizacaoDTO,
 } from "@/types/fiscalizacao";
+import prisma from "@/lib/prisma";
 
 export class FiscalizacaoService {
   private repository = new FiscalizacaoRepository();
@@ -63,6 +64,15 @@ export class FiscalizacaoService {
     data: UpdateFiscalizacaoDTO,
   ): Promise<FiscalizacaoResponseDTO> {
     const current = await this.findById(id);
+    const approvedReview = await prisma.revisao_fiscalizacao.findFirst({
+      where: {
+        fiscalizacaoId: id,
+        statusRevisao: { in: ["APROVADA", "CONTESTADA", "CORRECAO_SOLICITADA"] },
+      },
+    });
+    if (approvedReview) {
+      throw new Error("Fiscalização já revisada não pode ser alterada.");
+    }
     await this.ensureReferences({
       projetoObraId: data.projetoObraId ?? current.projetoObraId,
       usuarioId: data.usuarioId,
@@ -73,6 +83,12 @@ export class FiscalizacaoService {
 
   async delete(id: number): Promise<void> {
     await this.findById(id);
+    const review = await prisma.revisao_fiscalizacao.findFirst({
+      where: { fiscalizacaoId: id },
+    });
+    if (review) {
+      throw new Error("Fiscalização já revisada não pode ser excluída.");
+    }
     return this.repository.delete(id);
   }
 }

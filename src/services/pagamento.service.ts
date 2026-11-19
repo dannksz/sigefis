@@ -57,8 +57,22 @@ export class PagamentoService {
         where: {
           etapaCronogramaId: data.etapaCronogramaId,
           verbaPublicaId: contrato.verbaPublicaId,
+          status: "APROVADA",
         },
       });
+      const approvedInspection = await tx.revisao_fiscalizacao.findFirst({
+        where: {
+          statusRevisao: "APROVADA",
+          fiscalizacao: {
+            etapaCronogramaId: data.etapaCronogramaId,
+            projetoObraId: contrato.projetoObraId,
+          },
+        },
+        select: { id: true },
+      });
+      if (!approvedInspection) {
+        throw new Error("A etapa precisa de fiscalização revisada externamente.");
+      }
       assertFinancialLimits(
         paid._sum.valorPagamento?.toString() ?? "0.00",
         data.valorPagamento,
@@ -125,8 +139,25 @@ export class PagamentoService {
       });
       const released = await tx.liberacao_recurso.aggregate({
         _sum: { valorLiberacao: true },
-        where: { etapaCronogramaId, verbaPublicaId: contrato.verbaPublicaId },
+        where: {
+          etapaCronogramaId,
+          verbaPublicaId: contrato.verbaPublicaId,
+          status: "APROVADA",
+        },
       });
+      const approvedInspection = await tx.revisao_fiscalizacao.findFirst({
+        where: {
+          statusRevisao: "APROVADA",
+          fiscalizacao: {
+            etapaCronogramaId,
+            projetoObraId: contrato.projetoObraId,
+          },
+        },
+        select: { id: true },
+      });
+      if (!approvedInspection) {
+        throw new Error("A etapa precisa de fiscalização revisada externamente.");
+      }
       assertFinancialLimits(
         paid._sum.valorPagamento?.toString() ?? "0.00",
         valorPagamento,
@@ -155,6 +186,37 @@ export class PagamentoService {
     if (current.status !== "PENDENTE") throw new Error("O pagamento não está pendente.");
     if (current.criadoPorUsuarioId === aprovadoPorUsuarioId) {
       throw new Error("Quem criou o pagamento não pode aprová-lo.");
+    }
+    const pagamento = await prisma.pagamento.findUnique({
+      where: { id },
+      include: {
+        contrato: { select: { projetoObraId: true, verbaPublicaId: true } },
+      },
+    });
+    if (!pagamento) throw new Error("Pagamento não encontrado.");
+    const approvedInspection = await prisma.revisao_fiscalizacao.findFirst({
+      where: {
+        statusRevisao: "APROVADA",
+        fiscalizacao: {
+          etapaCronogramaId: pagamento.etapaCronogramaId,
+          projetoObraId: pagamento.contrato.projetoObraId,
+        },
+      },
+      select: { id: true },
+    });
+    if (!approvedInspection) {
+      throw new Error("A etapa precisa de fiscalização revisada externamente.");
+    }
+    const approvedRelease = await prisma.liberacao_recurso.findFirst({
+      where: {
+        status: "APROVADA",
+        etapaCronogramaId: pagamento.etapaCronogramaId,
+        verbaPublicaId: pagamento.contrato.verbaPublicaId,
+      },
+      select: { id: true },
+    });
+    if (!approvedRelease) {
+      throw new Error("O pagamento exige liberação de recurso aprovada.");
     }
     await prisma.$transaction(async (tx) => {
       await tx.pagamento.update({

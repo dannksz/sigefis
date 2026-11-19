@@ -28,6 +28,9 @@ export async function POST(request: Request, { params }: Params) {
     }).catch((error: unknown) => console.error("Erro ao auditar aprovação:", error));
     return NextResponse.json(result);
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === "A liberação exige fiscalização revisada externamente.") {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     if (error instanceof Error && [
       "Liberação de recurso não encontrada.",
       "Quem criou a liberação não pode aprová-la.",
