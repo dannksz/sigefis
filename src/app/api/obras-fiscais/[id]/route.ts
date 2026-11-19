@@ -20,7 +20,7 @@ function isNotFound(error: unknown): error is Error {
 function isReferenceNotFound(error: unknown): error is Error {
   return (
     error instanceof Error &&
-    ["Usuário não encontrado.", "Projeto não encontrado."].includes(
+    ["Usuário não encontrado.", "Projeto não encontrado.", "Usuário informado não possui o papel FISCAL."].includes(
       error.message,
     )
   );

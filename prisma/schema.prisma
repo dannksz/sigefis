@@ -69,6 +69,7 @@ model usuario {
   obrasFiscais        obra_fiscal[]
   processosReg        processo_regularizacao[]
   decisoesFinanceiras decisao_financeira[]
+  revisoesFiscais     revisao_fiscalizacao[]
   liberacoesCriadas   liberacao_recurso[]      @relation("LiberacaoCriadaPor")
   liberacoesAprovadas liberacao_recurso[]      @relation("LiberacaoAprovadaPor")
   pagamentosCriados   pagamento[]              @relation("PagamentoCriadoPor")
@@ -250,6 +251,7 @@ model obra_fiscal {
   dataDesignacao DateTime     @db.Date
   usuarioId      Int
   projetoObraId  Int
+  tipoFiscal     String       @default("INTERNO") @db.VarChar(20)
   projetoObra    projeto_obra @relation(fields: [projetoObraId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   usuario        usuario      @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -271,10 +273,25 @@ model fiscalizacao {
   usuario             usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   alertas             alerta_fiscalizacao[]
   evidencias          evidencia_fiscalizacao[]
+  revisoes            revisao_fiscalizacao[]
 
   @@index([etapaCronogramaId], map: "fiscalizacao_etapaCronogramaId_fkey")
   @@index([projetoObraId], map: "fiscalizacao_projetoObraId_fkey")
   @@index([usuarioId], map: "fiscalizacao_usuarioId_fkey")
+}
+
+model revisao_fiscalizacao {
+  id              Int          @id @default(autoincrement())
+  fiscalizacaoId  Int
+  fiscalExternoId Int
+  statusRevisao   String       @db.VarChar(30)
+  parecer         String       @db.Text
+  dataRevisao     DateTime     @default(now()) @db.DateTime(0)
+  fiscalizacao    fiscalizacao @relation(fields: [fiscalizacaoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  fiscalExterno   usuario      @relation(fields: [fiscalExternoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([fiscalizacaoId], map: "revisao_fiscalizacao_fiscalizacaoId_fkey")
+  @@index([fiscalExternoId], map: "revisao_fiscalizacao_fiscalExternoId_fkey")
 }
 
 model evidencia_fiscalizacao {

@@ -17,10 +17,13 @@ export class ObraFiscalService {
     projetoObraId?: number;
   }): Promise<void> {
     if (
-      data.usuarioId !== undefined &&
-      !(await this.userRepository.findById(data.usuarioId))
+      data.usuarioId !== undefined
     ) {
-      throw new Error("Usuário não encontrado.");
+      const user = await this.userRepository.findById(data.usuarioId);
+      if (!user) throw new Error("Usuário não encontrado.");
+      if (user.role !== "FISCAL") {
+        throw new Error("Usuário informado não possui o papel FISCAL.");
+      }
     }
     if (
       data.projetoObraId !== undefined &&

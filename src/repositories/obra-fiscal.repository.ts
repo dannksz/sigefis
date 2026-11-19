@@ -14,13 +14,14 @@ function toResponseDTO(item: obra_fiscal): ObraFiscalResponseDTO {
     dataDesignacao: item.dataDesignacao.toISOString().slice(0, 10),
     usuarioId: item.usuarioId,
     projetoObraId: item.projetoObraId,
+    tipoFiscal: item.tipoFiscal as "INTERNO" | "EXTERNO",
   };
 }
 
 export class ObraFiscalRepository {
   async create(data: CreateObraFiscalDTO): Promise<ObraFiscalResponseDTO> {
     const item = await prisma.obra_fiscal.create({
-      data: { ...data, dataDesignacao: toDate(data.dataDesignacao) },
+      data: { ...data, dataDesignacao: toDate(data.dataDesignacao), tipoFiscal: data.tipoFiscal ?? "INTERNO" },
     });
     return toResponseDTO(item);
   }
@@ -49,6 +50,7 @@ export class ObraFiscalRepository {
         ...(data.projetoObraId !== undefined && {
           projetoObraId: data.projetoObraId,
         }),
+        ...(data.tipoFiscal !== undefined && { tipoFiscal: data.tipoFiscal }),
       },
     });
     return toResponseDTO(item);

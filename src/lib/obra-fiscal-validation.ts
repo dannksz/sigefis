@@ -30,7 +30,7 @@ function isDate(value: unknown): value is string {
 
 function hasOnlyFields(value: Record<string, unknown>): boolean {
   return Object.keys(value).every((key) =>
-    ["dataDesignacao", "usuarioId", "projetoObraId"].includes(key),
+    ["dataDesignacao", "usuarioId", "projetoObraId", "tipoFiscal"].includes(key),
   );
 }
 
@@ -55,12 +55,18 @@ export function parseCreateObraFiscalInput(
       error: "Informe data, usuário e projeto válidos.",
     };
   }
+  const tipoFiscal =
+    value.tipoFiscal === undefined ? "INTERNO" : value.tipoFiscal;
+  if (tipoFiscal !== "INTERNO" && tipoFiscal !== "EXTERNO") {
+    return { success: false, error: "Tipo de fiscal inválido." };
+  }
   return {
     success: true,
     data: {
       dataDesignacao: value.dataDesignacao,
       usuarioId: value.usuarioId,
       projetoObraId: value.projetoObraId,
+      tipoFiscal,
     },
   };
 }
@@ -93,6 +99,12 @@ export function parseUpdateObraFiscalInput(
       return { success: false, error: "ID de projeto inválido." };
     }
     data.projetoObraId = value.projetoObraId;
+  }
+  if ("tipoFiscal" in value) {
+    if (value.tipoFiscal !== "INTERNO" && value.tipoFiscal !== "EXTERNO") {
+      return { success: false, error: "Tipo de fiscal inválido." };
+    }
+    data.tipoFiscal = value.tipoFiscal;
   }
   return { success: true, data };
 }

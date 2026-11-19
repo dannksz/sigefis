@@ -95,6 +95,7 @@ export const config = {
     "/api/projetos-verbas/:path*",
     "/api/etapas-cronograma/:path*",
     "/api/obras-fiscais/:path*",
+    "/api/revisoes-fiscalizacao/:path*",
     "/api/fiscalizacoes/:path*",
     "/api/evidencias-fiscalizacao/:path*",
     "/api/liberacoes-recursos/:path*",
