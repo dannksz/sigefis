@@ -9,13 +9,19 @@ function response(item: pagamento): PagamentoResponseDTO {
     dataPagamento: item.dataPagamento.toISOString().slice(0, 10),
     numeroNotaFiscal: item.numeroNotaFiscal, contratoId: item.contratoId,
     etapaCronogramaId: item.etapaCronogramaId,
+    status: item.status as "PENDENTE" | "APROVADA" | "REJEITADA",
+    criadoPorUsuarioId: item.criadoPorUsuarioId,
+    aprovadoPorUsuarioId: item.aprovadoPorUsuarioId,
+    dataAprovacao: item.dataAprovacao?.toISOString() ?? null,
   };
 }
-function createData(data: CreatePagamentoDTO): Prisma.pagamentoUncheckedCreateInput {
+function createData(data: CreatePagamentoDTO & { criadoPorUsuarioId: number }): Prisma.pagamentoUncheckedCreateInput {
   return {
     valorPagamento: data.valorPagamento, dataPagamento: toDate(data.dataPagamento),
     numeroNotaFiscal: data.numeroNotaFiscal, contratoId: data.contratoId,
     etapaCronogramaId: data.etapaCronogramaId,
+    status: "PENDENTE",
+    criadoPorUsuarioId: data.criadoPorUsuarioId,
   };
 }
 function updateData(data: UpdatePagamentoDTO): Prisma.pagamentoUncheckedUpdateInput {
@@ -28,8 +34,8 @@ function updateData(data: UpdatePagamentoDTO): Prisma.pagamentoUncheckedUpdateIn
   };
 }
 export class PagamentoRepository {
-  async create(data: CreatePagamentoDTO) { return response(await prisma.pagamento.create({ data: createData(data) })); }
-  async createWithClient(client: Prisma.TransactionClient, data: CreatePagamentoDTO) {
+  async create(data: CreatePagamentoDTO & { criadoPorUsuarioId: number }) { return response(await prisma.pagamento.create({ data: createData(data) })); }
+  async createWithClient(client: Prisma.TransactionClient, data: CreatePagamentoDTO & { criadoPorUsuarioId: number }) {
     return response(await client.pagamento.create({ data: createData(data) }));
   }
   async findAll() { return (await prisma.pagamento.findMany()).map(response); }

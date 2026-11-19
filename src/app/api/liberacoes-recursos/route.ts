@@ -18,7 +18,11 @@ export async function POST(request: Request) {
   catch { return NextResponse.json({ error: "O corpo da requisição deve ser um JSON válido." }, { status: 400 }); }
   const input = parseCreateLiberacaoRecursoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
-  try { return NextResponse.json(await service.create(input.data), { status: 201 }); }
+  const usuarioId = Number(request.headers.get("x-auth-user-id"));
+  if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) {
+    return NextResponse.json({ error: "Usuário autenticado inválido." }, { status: 401 });
+  }
+  try { return NextResponse.json(await service.create(input.data, usuarioId), { status: 201 }); }
   catch (error: unknown) {
     if (error instanceof Error && [
       "Etapa do cronograma não encontrada.",

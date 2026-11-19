@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auditMutationRequest } from "./lib/audit-request";
 import {
   canAccessResource,
+  canApproveFinancialOperation,
   getBearerToken,
   getJwtSecret,
   verifyAccessToken,
@@ -42,6 +43,15 @@ export function proxy(request: NextRequest) {
   if (!canAccessResource(claims.role, request.nextUrl.pathname, request.method)) {
     return NextResponse.json(
       { error: "Você não tem permissão para acessar este recurso." },
+      { status: 403 },
+    );
+  }
+  if (
+    request.nextUrl.pathname.includes("/aprovar") &&
+    !canApproveFinancialOperation(claims.role)
+  ) {
+    return NextResponse.json(
+      { error: "Somente ADMIN pode aprovar operações financeiras." },
       { status: 403 },
     );
   }

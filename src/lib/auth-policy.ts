@@ -25,6 +25,10 @@ export function canManageUsers(role: UserRole): boolean {
   return role === "ADMIN";
 }
 
+export function canApproveFinancialOperation(role: UserRole): boolean {
+  return role === "ADMIN";
+}
+
 type Permission = "read" | "write";
 
 const readRoles: Record<string, UserRole[]> = {

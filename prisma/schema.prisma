@@ -51,23 +51,27 @@ model endereco {
 }
 
 model usuario {
-  id               Int                      @id @default(autoincrement())
-  nome             String                   @db.VarChar(191)
-  email            String                   @unique @db.VarChar(191)
-  senha            String                   @db.VarChar(191)
-  cpf              String                   @db.VarChar(11)
-  cnpj             String?                  @db.VarChar(14)
-  dataNascimento   DateTime?                @db.DateTime(0)
-  role             user_role                @default(USER)
-  criadoEm         DateTime                 @default(now()) @db.DateTime(3)
-  atualizadoEm     DateTime                 @updatedAt @db.DateTime(3)
-  enderecoId       Int?
-  endereco         endereco?                @relation(fields: [enderecoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  tokenVerificacao String?                  @db.VarChar(191)
-  fiscalizacoes    fiscalizacao[]
-  logs             log_auditoria[]
-  obrasFiscais     obra_fiscal[]
-  processosReg     processo_regularizacao[]
+  id                  Int                      @id @default(autoincrement())
+  nome                String                   @db.VarChar(191)
+  email               String                   @unique @db.VarChar(191)
+  senha               String                   @db.VarChar(191)
+  cpf                 String                   @db.VarChar(11)
+  cnpj                String?                  @db.VarChar(14)
+  dataNascimento      DateTime?                @db.DateTime(0)
+  role                user_role                @default(USER)
+  criadoEm            DateTime                 @default(now()) @db.DateTime(3)
+  atualizadoEm        DateTime                 @updatedAt @db.DateTime(3)
+  enderecoId          Int?
+  endereco            endereco?                @relation(fields: [enderecoId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  tokenVerificacao    String?                  @db.VarChar(191)
+  fiscalizacoes       fiscalizacao[]
+  logs                log_auditoria[]
+  obrasFiscais        obra_fiscal[]
+  processosReg        processo_regularizacao[]
+  liberacoesCriadas   liberacao_recurso[]      @relation("LiberacaoCriadaPor")
+  liberacoesAprovadas liberacao_recurso[]      @relation("LiberacaoAprovadaPor")
+  pagamentosCriados   pagamento[]              @relation("PagamentoCriadoPor")
+  pagamentosAprovados pagamento[]              @relation("PagamentoAprovadoPor")
 
   @@index([enderecoId], map: "usuario_enderecoId_fkey")
 }
@@ -163,16 +167,24 @@ model etapa_cronograma {
 }
 
 model liberacao_recurso {
-  id                Int              @id @default(autoincrement())
-  valorLiberacao    Decimal          @db.Decimal(12, 2)
-  dataLiberacao     DateTime         @db.Date
-  verbaPublicaId    Int
-  etapaCronogramaId Int
-  etapaCronograma   etapa_cronograma @relation(fields: [etapaCronogramaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  verbaPublica      verba_publica    @relation(fields: [verbaPublicaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                   Int              @id @default(autoincrement())
+  valorLiberacao       Decimal          @db.Decimal(12, 2)
+  dataLiberacao        DateTime         @db.Date
+  verbaPublicaId       Int
+  etapaCronogramaId    Int
+  status               String           @default("PENDENTE") @db.VarChar(20)
+  criadoPorUsuarioId   Int
+  aprovadoPorUsuarioId Int?
+  dataAprovacao        DateTime?        @db.DateTime(0)
+  etapaCronograma      etapa_cronograma @relation(fields: [etapaCronogramaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  verbaPublica         verba_publica    @relation(fields: [verbaPublicaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  criadoPorUsuario     usuario          @relation("LiberacaoCriadaPor", fields: [criadoPorUsuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  aprovadoPorUsuario   usuario?         @relation("LiberacaoAprovadaPor", fields: [aprovadoPorUsuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([etapaCronogramaId], map: "liberacao_recurso_etapaCronogramaId_fkey")
   @@index([verbaPublicaId], map: "liberacao_recurso_verbaPublicaId_fkey")
+  @@index([criadoPorUsuarioId], map: "liberacao_recurso_criadoPorUsuarioId_fkey")
+  @@index([aprovadoPorUsuarioId], map: "liberacao_recurso_aprovadoPorUsuarioId_fkey")
 }
 
 model empresa {
@@ -210,18 +222,26 @@ model contrato {
 }
 
 model pagamento {
-  id                Int              @id @default(autoincrement())
-  valorPagamento    Decimal          @db.Decimal(12, 2)
-  dataPagamento     DateTime         @db.Date
-  numeroNotaFiscal  String           @db.VarChar(45)
-  contratoId        Int
-  etapaCronogramaId Int
-  contrato          contrato         @relation(fields: [contratoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  etapaCronograma   etapa_cronograma @relation(fields: [etapaCronogramaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                   Int              @id @default(autoincrement())
+  valorPagamento       Decimal          @db.Decimal(12, 2)
+  dataPagamento        DateTime         @db.Date
+  numeroNotaFiscal     String           @db.VarChar(45)
+  contratoId           Int
+  etapaCronogramaId    Int
+  status               String           @default("PENDENTE") @db.VarChar(20)
+  criadoPorUsuarioId   Int
+  aprovadoPorUsuarioId Int?
+  dataAprovacao        DateTime?        @db.DateTime(0)
+  contrato             contrato         @relation(fields: [contratoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  etapaCronograma      etapa_cronograma @relation(fields: [etapaCronogramaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  criadoPorUsuario     usuario          @relation("PagamentoCriadoPor", fields: [criadoPorUsuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  aprovadoPorUsuario   usuario?         @relation("PagamentoAprovadoPor", fields: [aprovadoPorUsuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
+  @@unique([numeroNotaFiscal])
   @@index([contratoId], map: "pagamento_contratoId_fkey")
   @@index([etapaCronogramaId], map: "pagamento_etapaCronogramaId_fkey")
-  @@unique([numeroNotaFiscal])
+  @@index([criadoPorUsuarioId], map: "pagamento_criadoPorUsuarioId_fkey")
+  @@index([aprovadoPorUsuarioId], map: "pagamento_aprovadoPorUsuarioId_fkey")
 }
 
 model obra_fiscal {

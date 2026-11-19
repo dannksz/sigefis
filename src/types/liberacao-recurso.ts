@@ -10,4 +10,8 @@ export type UpdateLiberacaoRecursoDTO = Partial<CreateLiberacaoRecursoDTO>;
 export interface LiberacaoRecursoResponseDTO
   extends CreateLiberacaoRecursoDTO {
   id: number;
+  status: "PENDENTE" | "APROVADA" | "REJEITADA";
+  criadoPorUsuarioId: number;
+  aprovadoPorUsuarioId: number | null;
+  dataAprovacao: string | null;
 }

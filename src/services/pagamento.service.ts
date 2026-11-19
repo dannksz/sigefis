@@ -23,7 +23,10 @@ function assertFinancialLimits(
 export class PagamentoService {
   private repository = new PagamentoRepository();
 
-  async create(data: CreatePagamentoDTO): Promise<PagamentoResponseDTO> {
+  async create(
+    data: CreatePagamentoDTO,
+    criadoPorUsuarioId: number,
+  ): Promise<PagamentoResponseDTO> {
     return prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM contrato WHERE id = ${data.contratoId} FOR UPDATE`;
       const contrato = await tx.contrato.findUnique({ where: { id: data.contratoId } });
@@ -68,7 +71,7 @@ export class PagamentoService {
         released._sum.valorLiberacao?.toString() ?? "0.00",
         "O pagamento excede o recurso liberado para a etapa.",
       );
-      return this.repository.createWithClient(tx, data);
+      return this.repository.createWithClient(tx, { ...data, criadoPorUsuarioId });
     });
   }
 
@@ -140,5 +143,24 @@ export class PagamentoService {
   async delete(id: number): Promise<void> {
     await this.findById(id);
     return this.repository.delete(id);
+  }
+  async approve(id: number, aprovadoPorUsuarioId: number): Promise<PagamentoResponseDTO> {
+    const current = await this.findById(id);
+    if (current.status !== "PENDENTE") throw new Error("O pagamento não está pendente.");
+    if (current.criadoPorUsuarioId === aprovadoPorUsuarioId) {
+      throw new Error("Quem criou o pagamento não pode aprová-lo.");
+    }
+    await prisma.pagamento.update({
+      where: { id },
+      data: {
+        status: "APROVADA",
+        aprovadoPorUsuarioId,
+        dataAprovacao: new Date(),
+      },
+    });
+    return this.repository.findById(id).then((response) => {
+      if (!response) throw new Error("Pagamento não encontrado.");
+      return response;
+    });
   }
 }

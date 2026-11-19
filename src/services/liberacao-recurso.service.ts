@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import { EtapaCronogramaRepository } from "@/repositories/etapa-cronograma.repository";
 import { LiberacaoRecursoRepository } from "@/repositories/liberacao-recurso.repository";
 import { ProjetoVerbaRepository } from "@/repositories/projeto-verba.repository";
@@ -45,9 +46,30 @@ export class LiberacaoRecursoService {
     }
   }
 
-  async create(data: CreateLiberacaoRecursoDTO): Promise<LiberacaoRecursoResponseDTO> {
+  async create(
+    data: CreateLiberacaoRecursoDTO,
+    criadoPorUsuarioId: number,
+  ): Promise<LiberacaoRecursoResponseDTO> {
     await this.ensureLimit(data.verbaPublicaId, data.etapaCronogramaId, data.valorLiberacao);
-    return this.repository.create(data);
+    return this.repository.create({ ...data, criadoPorUsuarioId });
+  }
+  async approve(id: number, aprovadoPorUsuarioId: number): Promise<LiberacaoRecursoResponseDTO> {
+    const current = await this.findById(id);
+    if (current.status !== "PENDENTE") throw new Error("A liberação não está pendente.");
+    if (current.criadoPorUsuarioId === aprovadoPorUsuarioId) {
+      throw new Error("Quem criou a liberação não pode aprová-la.");
+    }
+    await prisma.liberacao_recurso.update({
+      where: { id },
+      data: {
+        status: "APROVADA",
+        aprovadoPorUsuarioId,
+        dataAprovacao: new Date(),
+      },
+    });
+    const response = await this.repository.findById(id);
+    if (!response) throw new Error("Liberação de recurso não encontrada.");
+    return response;
   }
   findAll() { return this.repository.findAll(); }
   async findById(id: number): Promise<LiberacaoRecursoResponseDTO> {

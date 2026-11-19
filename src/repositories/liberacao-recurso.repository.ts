@@ -15,17 +15,23 @@ function response(item: liberacao_recurso): LiberacaoRecursoResponseDTO {
     dataLiberacao: item.dataLiberacao.toISOString().slice(0, 10),
     verbaPublicaId: item.verbaPublicaId,
     etapaCronogramaId: item.etapaCronogramaId,
+    status: item.status as "PENDENTE" | "APROVADA" | "REJEITADA",
+    criadoPorUsuarioId: item.criadoPorUsuarioId,
+    aprovadoPorUsuarioId: item.aprovadoPorUsuarioId,
+    dataAprovacao: item.dataAprovacao?.toISOString() ?? null,
   };
 }
 
 function createData(
-  data: CreateLiberacaoRecursoDTO,
+  data: CreateLiberacaoRecursoDTO & { criadoPorUsuarioId: number },
 ): Prisma.liberacao_recursoUncheckedCreateInput {
   return {
     valorLiberacao: data.valorLiberacao,
     dataLiberacao: toDate(data.dataLiberacao),
     verbaPublicaId: data.verbaPublicaId,
     etapaCronogramaId: data.etapaCronogramaId,
+    status: "PENDENTE",
+    criadoPorUsuarioId: data.criadoPorUsuarioId,
   };
 }
 
@@ -41,7 +47,7 @@ function updateData(
 }
 
 export class LiberacaoRecursoRepository {
-  async create(data: CreateLiberacaoRecursoDTO) {
+  async create(data: CreateLiberacaoRecursoDTO & { criadoPorUsuarioId: number }) {
     return response(await prisma.liberacao_recurso.create({ data: createData(data) }));
   }
   async findAll() {
