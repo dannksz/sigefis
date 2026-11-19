@@ -41,6 +41,9 @@ export async function PUT(request: Request, { params }: Params) {
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try { return NextResponse.json(await service.update(id, input.data)); }
   catch (error: unknown) {
+    if (error instanceof Error && error.message === "Operação já decidida não pode ser alterada.") {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     if (isLimit(error)) return NextResponse.json({ error: error.message }, { status: 409 });
     console.error("Erro ao atualizar liberação:", error);
@@ -54,6 +57,9 @@ export async function DELETE(_request: Request, { params }: Params) {
     await service.delete(id);
     return NextResponse.json({ message: "Liberação excluída com sucesso." });
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === "Operação já decidida não pode ser excluída.") {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
       return NextResponse.json({ error: "Não é possível excluir uma liberação associada a outros registros." }, { status: 409 });

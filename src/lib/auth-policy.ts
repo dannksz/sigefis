@@ -52,6 +52,7 @@ const readRoles: Record<string, UserRole[]> = {
   "/api/alertas-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
   "/api/bloqueios-repasse": ["ADMIN", "GESTOR", "FISCAL", "USER"],
   "/api/processos-regularizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/decisoes-financeiras": ["ADMIN", "GESTOR"],
 };
 
 const writeRoles: Record<string, UserRole[]> = {
@@ -75,6 +76,7 @@ const writeRoles: Record<string, UserRole[]> = {
   "/api/pagamentos": ["ADMIN", "GESTOR"],
   "/api/contas-bancarias": ["ADMIN", "GESTOR"],
   "/api/bloqueios-repasse": ["ADMIN", "GESTOR"],
+  "/api/decisoes-financeiras": ["ADMIN"],
 };
 
 function resourcePath(pathname: string): string {

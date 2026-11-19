@@ -68,6 +68,7 @@ model usuario {
   logs                log_auditoria[]
   obrasFiscais        obra_fiscal[]
   processosReg        processo_regularizacao[]
+  decisoesFinanceiras decisao_financeira[]
   liberacoesCriadas   liberacao_recurso[]      @relation("LiberacaoCriadaPor")
   liberacoesAprovadas liberacao_recurso[]      @relation("LiberacaoAprovadaPor")
   pagamentosCriados   pagamento[]              @relation("PagamentoCriadoPor")
@@ -363,4 +364,18 @@ model log_auditoria {
   usuario       usuario  @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([usuarioId], map: "log_auditoria_usuarioId_fkey")
+}
+
+model decisao_financeira {
+  id            Int      @id @default(autoincrement())
+  tipoOperacao  String   @db.VarChar(20)
+  operacaoId    Int
+  status        String   @db.VarChar(20)
+  justificativa String   @db.Text
+  usuarioId     Int
+  dataDecisao   DateTime @default(now()) @db.DateTime(0)
+  usuario       usuario  @relation(fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([usuarioId], map: "decisao_financeira_usuarioId_fkey")
+  @@index([tipoOperacao, operacaoId], map: "decisao_financeira_operacao_idx")
 }

@@ -47,7 +47,8 @@ export function proxy(request: NextRequest) {
     );
   }
   if (
-    request.nextUrl.pathname.includes("/aprovar") &&
+    (request.nextUrl.pathname.includes("/aprovar") ||
+      request.nextUrl.pathname.includes("/rejeitar")) &&
     !canApproveFinancialOperation(claims.role)
   ) {
     return NextResponse.json(
@@ -102,6 +103,7 @@ export const config = {
     "/api/alertas-fiscalizacao/:path*",
     "/api/bloqueios-repasse/:path*",
     "/api/processos-regularizacao/:path*",
+    "/api/decisoes-financeiras/:path*",
     "/api/logs-auditoria/:path*",
   ],
 };

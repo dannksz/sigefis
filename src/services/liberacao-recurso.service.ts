@@ -59,13 +59,24 @@ export class LiberacaoRecursoService {
     if (current.criadoPorUsuarioId === aprovadoPorUsuarioId) {
       throw new Error("Quem criou a liberação não pode aprová-la.");
     }
-    await prisma.liberacao_recurso.update({
-      where: { id },
-      data: {
-        status: "APROVADA",
-        aprovadoPorUsuarioId,
-        dataAprovacao: new Date(),
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.liberacao_recurso.update({
+        where: { id },
+        data: {
+          status: "APROVADA",
+          aprovadoPorUsuarioId,
+          dataAprovacao: new Date(),
+        },
+      });
+      await tx.decisao_financeira.create({
+        data: {
+          tipoOperacao: "LIBERACAO",
+          operacaoId: id,
+          status: "APROVADA",
+          justificativa: "Liberação aprovada.",
+          usuarioId: aprovadoPorUsuarioId,
+        },
+      });
     });
     const response = await this.repository.findById(id);
     if (!response) throw new Error("Liberação de recurso não encontrada.");
@@ -79,6 +90,9 @@ export class LiberacaoRecursoService {
   }
   async update(id: number, data: UpdateLiberacaoRecursoDTO): Promise<LiberacaoRecursoResponseDTO> {
     const current = await this.findById(id);
+    if (current.status !== "PENDENTE") {
+      throw new Error("Operação já decidida não pode ser alterada.");
+    }
     await this.ensureLimit(
       data.verbaPublicaId ?? current.verbaPublicaId,
       data.etapaCronogramaId ?? current.etapaCronogramaId,
@@ -88,7 +102,43 @@ export class LiberacaoRecursoService {
     return this.repository.update(id, data);
   }
   async delete(id: number) {
-    await this.findById(id);
+    const current = await this.findById(id);
+    if (current.status !== "PENDENTE") {
+      throw new Error("Operação já decidida não pode ser excluída.");
+    }
     return this.repository.delete(id);
+  }
+  async reject(
+    id: number,
+    usuarioId: number,
+    justificativa: string,
+  ): Promise<LiberacaoRecursoResponseDTO> {
+    const current = await this.findById(id);
+    if (current.status !== "PENDENTE") throw new Error("A liberação não está pendente.");
+    if (current.criadoPorUsuarioId === usuarioId) {
+      throw new Error("Quem criou a liberação não pode rejeitá-la.");
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.liberacao_recurso.update({
+        where: { id },
+        data: {
+          status: "REJEITADA",
+          aprovadoPorUsuarioId: usuarioId,
+          dataAprovacao: new Date(),
+        },
+      });
+      await tx.decisao_financeira.create({
+        data: {
+          tipoOperacao: "LIBERACAO",
+          operacaoId: id,
+          status: "REJEITADA",
+          justificativa,
+          usuarioId,
+        },
+      });
+    });
+    const response = await this.repository.findById(id);
+    if (!response) throw new Error("Liberação de recurso não encontrada.");
+    return response;
   }
 }

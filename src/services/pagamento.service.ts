@@ -89,6 +89,9 @@ export class PagamentoService {
     return prisma.$transaction(async (tx) => {
       const current = await tx.pagamento.findUnique({ where: { id } });
       if (!current) throw new Error("Pagamento não encontrado.");
+      if (current.status !== "PENDENTE") {
+        throw new Error("Operação já decidida não pode ser alterada.");
+      }
       const contratoId = data.contratoId ?? current.contratoId;
       const etapaCronogramaId = data.etapaCronogramaId ?? current.etapaCronogramaId;
       const numeroNotaFiscal = data.numeroNotaFiscal ?? current.numeroNotaFiscal;
@@ -141,7 +144,10 @@ export class PagamentoService {
   }
 
   async delete(id: number): Promise<void> {
-    await this.findById(id);
+    const current = await this.findById(id);
+    if (current.status !== "PENDENTE") {
+      throw new Error("Operação já decidida não pode ser excluída.");
+    }
     return this.repository.delete(id);
   }
   async approve(id: number, aprovadoPorUsuarioId: number): Promise<PagamentoResponseDTO> {
@@ -150,17 +156,61 @@ export class PagamentoService {
     if (current.criadoPorUsuarioId === aprovadoPorUsuarioId) {
       throw new Error("Quem criou o pagamento não pode aprová-lo.");
     }
-    await prisma.pagamento.update({
-      where: { id },
-      data: {
-        status: "APROVADA",
-        aprovadoPorUsuarioId,
-        dataAprovacao: new Date(),
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.pagamento.update({
+        where: { id },
+        data: {
+          status: "APROVADA",
+          aprovadoPorUsuarioId,
+          dataAprovacao: new Date(),
+        },
+      });
+      await tx.decisao_financeira.create({
+        data: {
+          tipoOperacao: "PAGAMENTO",
+          operacaoId: id,
+          status: "APROVADA",
+          justificativa: "Pagamento aprovado.",
+          usuarioId: aprovadoPorUsuarioId,
+        },
+      });
     });
     return this.repository.findById(id).then((response) => {
       if (!response) throw new Error("Pagamento não encontrado.");
       return response;
     });
+  }
+  async reject(
+    id: number,
+    usuarioId: number,
+    justificativa: string,
+  ): Promise<PagamentoResponseDTO> {
+    const current = await this.findById(id);
+    if (current.status !== "PENDENTE") throw new Error("O pagamento não está pendente.");
+    if (current.criadoPorUsuarioId === usuarioId) {
+      throw new Error("Quem criou o pagamento não pode rejeitá-lo.");
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.pagamento.update({
+        where: { id },
+        data: {
+          status: "REJEITADA",
+          aprovadoPorUsuarioId: usuarioId,
+          dataAprovacao: new Date(),
+        },
+      });
+      await tx.decisao_financeira.create({
+        data: {
+          tipoOperacao: "PAGAMENTO",
+          operacaoId: id,
+          status: "REJEITADA",
+          justificativa,
+          usuarioId,
+        },
+      });
+    });
+    const response = await this.repository.findById(id);
+    if (!response) throw new Error("Pagamento não encontrado.");
+    return response;
   }
 }
