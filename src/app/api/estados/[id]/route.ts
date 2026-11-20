@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EstadoService } from "@/services/estado.service";
 import { parseUpdateEstadoInput } from "@/lib/estado-validation";
 import { isEstadoSiglaConflict } from "@/lib/estado-errors";
@@ -76,6 +77,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const estado = await estadoService.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_ESTADO", estado.id ?? id);
     return NextResponse.json(estado, { status: 200 });
   } catch (error: unknown) {
     if (isEstadoNotFound(error)) {
@@ -109,6 +111,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     await estadoService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_ESTADO", id);
     return NextResponse.json(
       { message: "Estado deletado com sucesso." },
       { status: 200 },

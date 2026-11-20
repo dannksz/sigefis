@@ -64,7 +64,7 @@ export function parseUpdateProjetoVerbaInput(
   if (Object.keys(value).length === 0) {
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
-  const data: UpdateProjetoVerbaDTO = {};
+  const data: Partial<UpdateProjetoVerbaDTO> = {};
   if ("projetoObraId" in value) {
     if (!id(value.projetoObraId)) return { success: false, error: "Projeto inválido." };
     data.projetoObraId = value.projetoObraId;
@@ -78,5 +78,5 @@ export function parseUpdateProjetoVerbaInput(
     if (!valorAlocado) return { success: false, error: "Valor alocado inválido." };
     data.valorAlocado = valorAlocado;
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateProjetoVerbaDTO };
 }

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseUpdateRevisaoFiscalizacaoInput } from "@/lib/revisao-fiscalizacao-validation";
 import { RevisaoFiscalizacaoService } from "@/services/revisao-fiscalizacao.service";
 
@@ -37,7 +38,9 @@ export async function PUT(request: Request, { params }: Params) {
   const input = parseUpdateRevisaoFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
-    return NextResponse.json(await service.update(id, input.data));
+    const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_REVISAO_FISCALIZACAO", result.id ?? id);
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Revisão de fiscalização não encontrada.") {
       return NextResponse.json({ error: error.message }, { status: 404 });
@@ -52,6 +55,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (id === null) return NextResponse.json({ error: "ID de revisão inválido." }, { status: 400 });
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_REVISAO_FISCALIZACAO", id);
     return NextResponse.json({ message: "Revisão excluída com sucesso." });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Revisão de fiscalização não encontrada.") {

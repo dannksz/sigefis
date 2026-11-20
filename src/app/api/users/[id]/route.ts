@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { UserService } from '@/services/user.service';
 import { parseUpdateUserInput } from '@/lib/user-validation';
 import {
@@ -77,6 +78,7 @@ export async function PUT(request: Request, { params }: Params) {
             return NextResponse.json({ error: input.error }, { status: 400 });
         }
         const updatedUser = await userService.update(id, input.data);
+        await auditRequestSuccess(request, "ATUALIZAR_USUARIO", updatedUser.id ?? id);
         return NextResponse.json(updatedUser, { status: 200 });
     } catch (error: unknown) {
         if (error instanceof Error && error.message === 'Usuário não encontrado.') {
@@ -95,6 +97,7 @@ export async function DELETE(request: Request, { params }: Params) {
             return NextResponse.json({ error: 'ID de usuário inválido.' }, { status: 400 });
         }
         await userService.delete(id);
+        await auditRequestSuccess(request, "EXCLUIR_USUARIO", id);
         return NextResponse.json({ message: 'Usuário deletado com sucesso.' }, { status: 200 });
     } catch (error: unknown) {
         if (error instanceof Error && error.message === 'Usuário não encontrado.') {

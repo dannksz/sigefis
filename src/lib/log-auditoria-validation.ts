@@ -70,7 +70,7 @@ export function parseUpdateLogAuditoriaInput(
   if (Object.keys(value).length === 0) {
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
-  const data: UpdateLogAuditoriaDTO = {};
+  const data: Partial<UpdateLogAuditoriaDTO> = {};
   const textFields = [
     ["acao", 100],
     ["tabelaAfetada", 60],
@@ -91,5 +91,5 @@ export function parseUpdateLogAuditoriaInput(
       data[field] = value[field];
     }
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateLogAuditoriaDTO };
 }

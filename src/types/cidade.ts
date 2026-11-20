@@ -4,8 +4,8 @@ export interface CreateCidadeDTO {
 }
 
 export interface UpdateCidadeDTO {
-    nome?: string;
-    estadoId?: number;
+    nome: string;
+    estadoId: number;
 }
 
 export interface CidadeResponseDTO {

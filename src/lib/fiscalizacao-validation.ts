@@ -107,7 +107,7 @@ export function parseUpdateFiscalizacaoInput(
       error: "Informe ao menos um campo para atualizar.",
     };
   }
-  const data: UpdateFiscalizacaoDTO = {};
+  const data: Partial<UpdateFiscalizacaoDTO> = {};
   if ("dataVistoria" in value) {
     if (!isDate(value.dataVistoria)) {
       return { success: false, error: "Data de vistoria inválida." };
@@ -145,5 +145,5 @@ export function parseUpdateFiscalizacaoInput(
       data[field] = value[field];
     }
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateFiscalizacaoDTO };
 }

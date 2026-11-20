@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { ProjetoService } from "@/services/projeto.service";
 import { parseCreateProjetoInput } from "@/lib/projeto-validation";
 
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
 
   try {
     const projeto = await projetoService.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_PROJETO", projeto.id);
     return NextResponse.json(projeto, { status: 201 });
   } catch (error: unknown) {
     if (isEnderecoNotFound(error)) {

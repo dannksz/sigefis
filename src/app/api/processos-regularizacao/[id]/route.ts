@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseUpdateProcessoRegularizacaoInput } from "@/lib/processo-regularizacao-validation";
 import { ProcessoRegularizacaoService } from "@/services/processo-regularizacao.service";
 
@@ -67,7 +68,9 @@ export async function PUT(request: Request, { params }: Params) {
     return NextResponse.json({ error: input.error }, { status: 400 });
   }
   try {
-    return NextResponse.json(await service.update(id, input.data));
+    const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_PROCESSO_REGULARIZACAO", result.id ?? id);
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (isReferenceError(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });
@@ -90,6 +93,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_PROCESSO_REGULARIZACAO", id);
     return NextResponse.json({
       message: "Processo de regularização excluído com sucesso.",
     });

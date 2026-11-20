@@ -6,16 +6,16 @@ export interface CreateBloqueioRepasseDTO {
 }
 
 export interface UpdateBloqueioRepasseDTO {
-  motivoBloqueio?: string;
-  statusBloqueio?: string;
+  motivoBloqueio: string;
+  statusBloqueio: string;
   dataDesbloqueio?: string | null;
-  projetoObraId?: number;
-  alertaFiscalizacaoId?: number;
+  projetoObraId: number;
+  alertaFiscalizacaoId: number;
 }
 
 export interface BloqueioRepasseResponseDTO
   extends CreateBloqueioRepasseDTO {
   id: number;
   dataBloqueio: string;
-  dataDesbloqueio: string | null;
+  dataDesbloqueio?: string | null;
 }

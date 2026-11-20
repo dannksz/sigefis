@@ -5,9 +5,9 @@ export interface CreateEstadoDTO {
 }
 
 export interface UpdateEstadoDTO {
-    nome?: string;
-    sigla?: string;
-    regiao?: string;
+    nome: string;
+    sigla: string;
+    regiao: string;
 }
 
 export interface EstadoResponseDTO {

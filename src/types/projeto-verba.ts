@@ -5,9 +5,9 @@ export interface CreateProjetoVerbaDTO {
 }
 
 export interface UpdateProjetoVerbaDTO {
-  projetoObraId?: number;
-  verbaPublicaId?: number;
-  valorAlocado?: string;
+  projetoObraId: number;
+  verbaPublicaId: number;
+  valorAlocado: string;
 }
 
 export interface ProjetoVerbaResponseDTO extends CreateProjetoVerbaDTO {

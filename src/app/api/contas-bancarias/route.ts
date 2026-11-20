@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseCreateContaBancariaInput } from "@/lib/conta-bancaria-validation";
 import { ContaBancariaService } from "@/services/conta-bancaria.service";
 import {
@@ -45,7 +46,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    return NextResponse.json(await service.create(input.data), { status: 201 });
+    const result = await service.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_CONTA_BANCARIA", result.id);
+    return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (error instanceof Error && referenceErrors.includes(error.message)) {
       return NextResponse.json({ error: error.message }, { status: 404 });

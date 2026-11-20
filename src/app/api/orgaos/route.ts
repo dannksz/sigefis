@@ -1,6 +1,7 @@
 import { parseListQuery } from "@/lib/pagination";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { OrgaoPublicoService } from "@/services/orgao-publico.service";
 import { parseCreateOrgaoPublicoInput } from "@/lib/orgao-publico-validation";
 
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
 
   try {
     const orgaoPublico = await orgaoPublicoService.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_ORGAO", orgaoPublico.id);
     return NextResponse.json(orgaoPublico, { status: 201 });
   } catch (error: unknown) {
     if (isEnderecoNotFound(error) || isForeignKeyConstraintError(error)) {

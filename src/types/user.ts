@@ -14,13 +14,13 @@ export interface CreateUserDTO {
 }
 
 export interface UpdateUserDTO {
-  nome?: string;
-  email?: string;
-  senha?: string;
-  cpf?: string;
+  nome: string;
+  email: string;
+  senha: string;
+  cpf: string;
   cnpj?: string | null;
   dataNascimento?: Date | string | null;
-  role?: UserRole;
+  role: UserRole;
   enderecoId?: number | null;
 }
 

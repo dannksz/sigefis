@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EnderecoService } from "@/services/endereco.service";
 import { parseCreateEnderecoInput } from "@/lib/endereco-validation";
 
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
 
   try {
     const endereco = await enderecoService.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_ENDERECO", endereco.id);
     return NextResponse.json(endereco, { status: 201 });
   } catch (error: unknown) {
     if (isCidadeNotFound(error)) {

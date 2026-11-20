@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { ProjetoVerbaService } from "@/services/projeto-verba.service";
 import { parseUpdateProjetoVerbaInput } from "@/lib/projeto-verba-validation";
 
@@ -36,7 +37,9 @@ export async function PUT(request: Request, { params }: Params) {
   catch { return NextResponse.json({ error: "O corpo da requisição deve ser um JSON válido." }, { status: 400 }); }
   const input = parseUpdateProjetoVerbaInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
-  try { return NextResponse.json(await service.update(id, input.data)); }
+  try { const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_PROJETO_VERBA", result.id ?? id);
+    return NextResponse.json(result); }
   catch (error: unknown) {
     if (isNotFound(error) || isReferenceNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao atualizar vínculo projeto-verba:", error);
@@ -49,6 +52,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (id === null) return NextResponse.json({ error: "ID de vínculo inválido." }, { status: 400 });
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_PROJETO_VERBA", id);
     return NextResponse.json({ message: "Vínculo projeto-verba excluído com sucesso." });
   } catch (error: unknown) {
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });

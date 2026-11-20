@@ -6,10 +6,10 @@ export interface CreateEmendaParlamentarDTO {
 }
 
 export interface UpdateEmendaParlamentarDTO {
-  numero?: string;
-  autor?: string;
-  valor?: string;
-  verbaId?: number;
+  numero: string;
+  autor: string;
+  valor: string;
+  verbaId: number;
 }
 
 export interface EmendaParlamentarResponseDTO

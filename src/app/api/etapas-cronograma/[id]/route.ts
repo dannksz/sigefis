@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EtapaCronogramaService } from "@/services/etapa-cronograma.service";
 import { parseUpdateEtapaCronogramaInput } from "@/lib/etapa-cronograma-validation";
 
@@ -31,7 +32,9 @@ export async function PUT(request: Request, { params }: Params) {
   catch { return NextResponse.json({ error: "O corpo da requisição deve ser um JSON válido." }, { status: 400 }); }
   const input = parseUpdateEtapaCronogramaInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
-  try { return NextResponse.json(await service.update(id, input.data)); }
+  try { const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_ETAPA_CRONOGRAMA", result.id ?? id);
+    return NextResponse.json(result); }
   catch (error: unknown) {
     if (isNotFound(error) || isProjetoNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao atualizar etapa:", error);
@@ -43,6 +46,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (id === null) return NextResponse.json({ error: "ID de etapa inválido." }, { status: 400 });
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_ETAPA_CRONOGRAMA", id);
     return NextResponse.json({ message: "Etapa excluída com sucesso." });
   }   catch (error: unknown) {
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });

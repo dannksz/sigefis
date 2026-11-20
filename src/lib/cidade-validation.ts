@@ -73,7 +73,7 @@ export function parseUpdateCidadeInput(
     };
   }
 
-  const data: UpdateCidadeDTO = {};
+  const data: Partial<UpdateCidadeDTO> = {};
 
   if ("nome" in value) {
     if (!isValidNome(value.nome)) {
@@ -92,5 +92,5 @@ export function parseUpdateCidadeInput(
     data.estadoId = value.estadoId;
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateCidadeDTO };
 }

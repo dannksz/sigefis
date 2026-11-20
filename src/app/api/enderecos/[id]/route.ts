@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EnderecoService } from "@/services/endereco.service";
 import { parseUpdateEnderecoInput } from "@/lib/endereco-validation";
 
@@ -80,6 +81,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const endereco = await enderecoService.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_ENDERECO", endereco.id ?? id);
     return NextResponse.json(endereco, { status: 200 });
   } catch (error: unknown) {
     if (isEnderecoNotFound(error) || isCidadeNotFound(error)) {
@@ -107,6 +109,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     await enderecoService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_ENDERECO", id);
     return NextResponse.json(
       { message: "Endereço excluído com sucesso." },
       { status: 200 },

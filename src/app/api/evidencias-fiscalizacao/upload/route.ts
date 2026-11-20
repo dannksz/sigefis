@@ -4,6 +4,7 @@ import { auditSuccess } from "@/lib/audit-request";
 import {
   isValidLatitude,
   isValidLongitude,
+  deleteEvidenceFile,
   saveEvidenceFile,
 } from "@/lib/evidencia-upload";
 
@@ -98,8 +99,14 @@ export async function POST(request: Request) {
     return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Fiscalização não encontrada.") {
+      await deleteEvidenceFile(caminhoArquivo).catch((cleanupError: unknown) =>
+        console.error("Erro ao remover arquivo após falha do cadastro:", cleanupError),
+      );
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
+    await deleteEvidenceFile(caminhoArquivo).catch((cleanupError: unknown) =>
+      console.error("Erro ao remover arquivo após falha do cadastro:", cleanupError),
+    );
     console.error("Erro ao cadastrar evidência enviada:", error);
     return NextResponse.json(
       { error: "Erro interno ao cadastrar evidência." },

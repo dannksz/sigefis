@@ -76,7 +76,7 @@ export function parseUpdateLiberacaoRecursoInput(
   if (Object.keys(value).length === 0) {
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
-  const data: UpdateLiberacaoRecursoDTO = {};
+  const data: Partial<UpdateLiberacaoRecursoDTO> = {};
   if ("valorLiberacao" in value) {
     const valorLiberacao = money(value.valorLiberacao);
     if (!valorLiberacao) return { success: false, error: "Valor da liberação inválido." };
@@ -92,5 +92,5 @@ export function parseUpdateLiberacaoRecursoInput(
       data[field] = value[field];
     }
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateLiberacaoRecursoDTO };
 }

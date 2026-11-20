@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EmpresaService } from "@/services/empresa.service";
 import { parseCreateEmpresaInput } from "@/lib/empresa-validation";
 import { isEmpresaCnpjConflict } from "@/lib/empresa-errors";
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
 
   try {
     const empresa = await empresaService.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_EMPRESA", empresa.id);
     return NextResponse.json(empresa, { status: 201 });
   } catch (error: unknown) {
     if (isEnderecoNotFound(error)) {

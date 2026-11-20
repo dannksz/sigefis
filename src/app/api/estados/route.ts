@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EstadoService } from "@/services/estado.service";
 import { parseCreateEstadoInput } from "@/lib/estado-validation";
 import { isEstadoSiglaConflict } from "@/lib/estado-errors";
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
 
     try { 
         const estado = await estadoService.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_ESTADO", estado.id);
         return NextResponse.json(estado, { status: 201 });
     } catch (error: unknown) {
         if (isEstadoSiglaConflict(error)) {

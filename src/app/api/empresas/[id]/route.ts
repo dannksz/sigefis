@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EmpresaService } from "@/services/empresa.service";
 import { parseUpdateEmpresaInput } from "@/lib/empresa-validation";
 import { isEmpresaCnpjConflict } from "@/lib/empresa-errors";
@@ -87,6 +88,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const empresa = await empresaService.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_EMPRESA", empresa.id ?? id);
     return NextResponse.json(empresa, { status: 200 });
   } catch (error: unknown) {
     if (isEmpresaNotFound(error) || isEnderecoNotFound(error)) {
@@ -120,6 +122,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     await empresaService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_EMPRESA", id);
     return NextResponse.json(
       { message: "Empresa excluída com sucesso." },
       { status: 200 },

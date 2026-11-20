@@ -49,7 +49,7 @@ export function parseCreatePagamentoInput(value: unknown): Result<CreatePagament
 export function parseUpdatePagamentoInput(value: unknown): Result<UpdatePagamentoDTO> {
   if (!record(value) || !fields(value)) return { success: false, error: "Dados inválidos ou campos não permitidos." };
   if (Object.keys(value).length === 0) return { success: false, error: "Informe ao menos um campo para atualizar." };
-  const data: UpdatePagamentoDTO = {};
+  const data: Partial<UpdatePagamentoDTO> = {};
   if ("valorPagamento" in value) {
     const parsed = money(value.valorPagamento);
     if (!parsed) return { success: false, error: "Valor do pagamento inválido." };
@@ -69,5 +69,5 @@ export function parseUpdatePagamentoInput(value: unknown): Result<UpdatePagament
       data[field] = value[field];
     }
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdatePagamentoDTO };
 }

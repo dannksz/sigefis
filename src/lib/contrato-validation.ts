@@ -163,7 +163,7 @@ export function parseUpdateContratoInput(
     };
   }
 
-  const data: UpdateContratoDTO = {};
+  const data: Partial<UpdateContratoDTO> = {};
   if ("numeroContrato" in value) {
     if (!isValidText(value.numeroContrato, 45)) {
       return { success: false, error: "Número deve ter de 1 a 45 caracteres." };
@@ -197,5 +197,5 @@ export function parseUpdateContratoInput(
     }
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateContratoDTO };
 }

@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EmendaParlamentarService } from "@/services/emenda-parlamentar.service";
 import { parseCreateEmendaParlamentarInput } from "@/lib/emenda-parlamentar-validation";
 
@@ -35,7 +36,9 @@ export async function POST(request: Request) {
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
 
   try {
-    return NextResponse.json(await service.create(input.data), { status: 201 });
+    const result = await service.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_EMENDA_PARLAMENTAR", result.id);
+    return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (isVerbaNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });

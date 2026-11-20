@@ -77,7 +77,7 @@ export function parseUpdateContaBancariaInput(
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
 
-  const data: UpdateContaBancariaDTO = {};
+  const data: Partial<UpdateContaBancariaDTO> = {};
   const textFields = [
     ["banco", 100],
     ["agencia", 20],
@@ -103,5 +103,5 @@ export function parseUpdateContaBancariaInput(
     }
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateContaBancariaDTO };
 }

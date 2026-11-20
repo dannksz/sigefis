@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { ContratoService } from "@/services/contrato.service";
 import { parseUpdateContratoInput } from "@/lib/contrato-validation";
 
@@ -89,10 +90,9 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    return NextResponse.json(
-      await contratoService.update(id, input.data),
-      { status: 200 },
-    );
+    const result = await contratoService.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_CONTRATO", result.id ?? id);
+    return NextResponse.json(result, { status: 200 });
   } catch (error: unknown) {
     if (
       isContratoNotFound(error) ||
@@ -125,6 +125,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     await contratoService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_CONTRATO", id);
     return NextResponse.json(
       { message: "Contrato excluído com sucesso." },
       { status: 200 },

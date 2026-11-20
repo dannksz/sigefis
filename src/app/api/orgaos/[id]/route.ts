@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { OrgaoPublicoService } from "@/services/orgao-publico.service";
 import { parseUpdateOrgaoPublicoInput } from "@/lib/orgao-publico-validation";
 
@@ -92,6 +93,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const orgaoPublico = await orgaoPublicoService.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_ORGAO", orgaoPublico.id ?? id);
     return NextResponse.json(orgaoPublico, { status: 200 });
   } catch (error: unknown) {
     if (isOrgaoPublicoNotFound(error)) {
@@ -126,6 +128,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     await orgaoPublicoService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_ORGAO", id);
     return NextResponse.json(
       { message: "Órgão público excluído com sucesso." },
       { status: 200 },

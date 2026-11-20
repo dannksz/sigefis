@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { ObraFiscalService } from "@/services/obra-fiscal.service";
 import { parseUpdateObraFiscalInput } from "@/lib/obra-fiscal-validation";
 
@@ -54,7 +55,9 @@ export async function PUT(request: Request, { params }: Params) {
   const input = parseUpdateObraFiscalInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
-    return NextResponse.json(await service.update(id, input.data));
+    const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_OBRA_FISCAL", result.id ?? id);
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (isNotFound(error) || isReferenceNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });
@@ -71,6 +74,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_OBRA_FISCAL", id);
     return NextResponse.json({ message: "Obra fiscal excluída com sucesso." });
   } catch (error: unknown) {
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });

@@ -181,7 +181,7 @@ export function parseUpdateUserInput(
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
 
-  const data: UpdateUserDTO = {};
+  const data: Partial<UpdateUserDTO> = {};
   if ("nome" in value) {
     if (!validName(value.nome)) {
       return { success: false, error: "Nome inválido." };
@@ -234,5 +234,5 @@ export function parseUpdateUserInput(
     data.role = value.role;
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateUserDTO };
 }

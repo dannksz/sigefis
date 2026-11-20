@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { VerbaPublicaService } from "@/services/verba-publica.service";
 import { parseUpdateVerbaPublicaInput } from "@/lib/verba-publica-validation";
 
@@ -64,10 +65,9 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    return NextResponse.json(
-      await verbaPublicaService.update(id, input.data),
-      { status: 200 },
-    );
+    const result = await verbaPublicaService.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_VERBA_PUBLICA", result.id ?? id);
+    return NextResponse.json(result, { status: 200 });
   } catch (error: unknown) {
     if (isVerbaNotFound(error) || isOrgaoNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });
@@ -88,6 +88,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     await verbaPublicaService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_VERBA_PUBLICA", id);
     return NextResponse.json(
       { message: "Verba pública excluída com sucesso." },
       { status: 200 },

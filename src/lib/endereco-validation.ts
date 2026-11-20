@@ -128,7 +128,7 @@ export function parseCreateEnderecoInput(
     }
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateEnderecoDTO };
 }
 
 export function parseUpdateEnderecoInput(
@@ -145,7 +145,7 @@ export function parseUpdateEnderecoInput(
     };
   }
 
-  const data: UpdateEnderecoDTO = {};
+  const data: Partial<UpdateEnderecoDTO> = {};
 
   if ("logradouro" in value) {
     if (!isValidText(value.logradouro, 191)) {
@@ -210,5 +210,5 @@ export function parseUpdateEnderecoInput(
     data.cidadeId = value.cidadeId;
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateEnderecoDTO };
 }

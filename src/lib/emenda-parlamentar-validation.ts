@@ -77,7 +77,7 @@ export function parseUpdateEmendaParlamentarInput(
   if (Object.keys(value).length === 0) {
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
-  const data: UpdateEmendaParlamentarDTO = {};
+  const data: Partial<UpdateEmendaParlamentarDTO> = {};
   if ("numero" in value) {
     if (!isValidText(value.numero)) return { success: false, error: "Número inválido." };
     data.numero = value.numero.trim();
@@ -95,5 +95,5 @@ export function parseUpdateEmendaParlamentarInput(
     if (!isValidId(value.verbaId)) return { success: false, error: "ID de verba pública inválido." };
     data.verbaId = value.verbaId;
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateEmendaParlamentarDTO };
 }

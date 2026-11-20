@@ -6,10 +6,10 @@ export interface CreateProjetoDTO {
 }
 
 export interface UpdateProjetoDTO {
-  nome?: string;
-  descricao?: string;
-  finalidade?: string;
-  enderecoId?: number;
+  nome: string;
+  descricao: string;
+  finalidade: string;
+  enderecoId: number;
 }
 
 export interface ProjetoResponseDTO {

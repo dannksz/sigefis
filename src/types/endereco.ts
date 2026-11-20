@@ -8,19 +8,19 @@ export interface CreateEnderecoDTO {
 }
 
 export interface UpdateEnderecoDTO {
-    logradouro?: string;
-    numero?: string;
+    logradouro: string;
+    numero: string;
     complemento?: string | null;
-    bairro?: string;
-    cep?: string;
-    cidadeId?: number;
+    bairro: string;
+    cep: string;
+    cidadeId: number;
 }
 
 export interface EnderecoResponseDTO {
     id: number;
     logradouro: string;
     numero: string;
-    complemento: string | null;
+    complemento?: string | null;
     bairro: string;
     cep: string;
     cidadeId: number;

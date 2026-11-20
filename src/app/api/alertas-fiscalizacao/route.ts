@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseCreateAlertaFiscalizacaoInput } from "@/lib/alerta-fiscalizacao-validation";
 import { AlertaFiscalizacaoService } from "@/services/alerta-fiscalizacao.service";
 
@@ -35,7 +36,9 @@ export async function POST(request: Request) {
   const input = parseCreateAlertaFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
-    return NextResponse.json(await service.create(input.data), { status: 201 });
+    const result = await service.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_ALERTA_FISCALIZACAO", result.id);
+    return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (error instanceof Error && referenceErrors.includes(error.message)) {
       return NextResponse.json({ error: error.message }, { status: 404 });

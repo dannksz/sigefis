@@ -73,7 +73,7 @@ export function parseUpdateEstadoInput(
     };
   }
 
-  const data: UpdateEstadoDTO = {};
+  const data: Partial<UpdateEstadoDTO> = {};
 
   if ("nome" in value) {
     if (
@@ -104,5 +104,5 @@ export function parseUpdateEstadoInput(
     data.regiao = value.regiao.trim();
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateEstadoDTO };
 }

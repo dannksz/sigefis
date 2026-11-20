@@ -81,7 +81,7 @@ export function parseUpdateObraFiscalInput(
       error: "Informe ao menos um campo para atualizar.",
     };
   }
-  const data: UpdateObraFiscalDTO = {};
+  const data: Partial<UpdateObraFiscalDTO> = {};
   if ("dataDesignacao" in value) {
     if (!isDate(value.dataDesignacao)) {
       return { success: false, error: "Data de designação inválida." };
@@ -106,5 +106,5 @@ export function parseUpdateObraFiscalInput(
     }
     data.tipoFiscal = value.tipoFiscal;
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateObraFiscalDTO };
 }

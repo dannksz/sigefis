@@ -82,7 +82,7 @@ export function parseUpdateBloqueioRepasseInput(
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
 
-  const data: UpdateBloqueioRepasseDTO = {};
+  const data: Partial<UpdateBloqueioRepasseDTO> = {};
   if ("motivoBloqueio" in value) {
     if (!text(value.motivoBloqueio, 65535)) {
       return { success: false, error: "Motivo do bloqueio inválido." };
@@ -107,5 +107,5 @@ export function parseUpdateBloqueioRepasseInput(
       data[field] = value[field];
     }
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateBloqueioRepasseDTO };
 }

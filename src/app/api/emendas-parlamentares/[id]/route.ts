@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EmendaParlamentarService } from "@/services/emenda-parlamentar.service";
 import { parseUpdateEmendaParlamentarInput } from "@/lib/emenda-parlamentar-validation";
 
@@ -47,7 +48,9 @@ export async function PUT(request: Request, { params }: Params) {
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
 
   try {
-    return NextResponse.json(await service.update(id, input.data), { status: 200 });
+    const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_EMENDA_PARLAMENTAR", result.id ?? id);
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (isAmendmentNotFound(error) || isVerbaNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });
@@ -62,6 +65,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (id === null) return NextResponse.json({ error: "ID de emenda parlamentar inválido." }, { status: 400 });
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_EMENDA_PARLAMENTAR", id);
     return NextResponse.json({ message: "Emenda parlamentar excluída com sucesso." }, { status: 200 });
   } catch (error: unknown) {
     if (isAmendmentNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });

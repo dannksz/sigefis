@@ -114,7 +114,7 @@ export function parseUpdateEmpresaInput(
     };
   }
 
-  const data: UpdateEmpresaDTO = {};
+  const data: Partial<UpdateEmpresaDTO> = {};
 
   if ("nome" in value) {
     if (!isValidText(value.nome, 191)) {
@@ -165,5 +165,5 @@ export function parseUpdateEmpresaInput(
     data.enderecoId = value.enderecoId;
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateEmpresaDTO };
 }

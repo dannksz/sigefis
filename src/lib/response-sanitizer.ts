@@ -42,7 +42,7 @@ export function sanitizeContaBancariaList<
 }
 
 export function sanitizeEmpresa<T extends {
-  id: number;
+  id?: number;
   nome: string;
   cnpj: string;
   representanteLegal: string;
@@ -62,7 +62,7 @@ export function sanitizeEmpresa<T extends {
 
 export function sanitizeEmpresaList<
   T extends {
-    id: number;
+    id?: number;
     nome: string;
     cnpj: string;
     representanteLegal: string;

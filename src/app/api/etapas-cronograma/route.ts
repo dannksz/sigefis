@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { EtapaCronogramaService } from "@/services/etapa-cronograma.service";
 import { parseCreateEtapaCronogramaInput } from "@/lib/etapa-cronograma-validation";
 
@@ -21,7 +22,9 @@ export async function POST(request: Request) {
   catch { return NextResponse.json({ error: "O corpo da requisição deve ser um JSON válido." }, { status: 400 }); }
   const input = parseCreateEtapaCronogramaInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
-  try { return NextResponse.json(await service.create(input.data), { status: 201 }); }
+  try { const result = await service.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_ETAPA_CRONOGRAMA", result.id);
+    return NextResponse.json(result, { status: 201 }); }
   catch (error: unknown) {
     if (isProjetoNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao criar etapa:", error);

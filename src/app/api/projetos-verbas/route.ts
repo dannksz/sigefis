@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { ProjetoVerbaService } from "@/services/projeto-verba.service";
 import { parseCreateProjetoVerbaInput } from "@/lib/projeto-verba-validation";
 
@@ -33,7 +34,9 @@ export async function POST(request: Request) {
   const input = parseCreateProjetoVerbaInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
-    return NextResponse.json(await service.create(input.data), { status: 201 });
+    const result = await service.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_PROJETO_VERBA", result.id);
+    return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (isReferenceNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao criar vínculo projeto-verba:", error);

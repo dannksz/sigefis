@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { FiscalizacaoService } from "@/services/fiscalizacao.service";
 import { parseUpdateFiscalizacaoInput } from "@/lib/fiscalizacao-validation";
 
@@ -57,7 +58,9 @@ export async function PUT(request: Request, { params }: Params) {
   const input = parseUpdateFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
-    return NextResponse.json(await service.update(id, input.data));
+    const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_FISCALIZACAO", result.id ?? id);
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Fiscalização já revisada não pode ser alterada.") {
       return NextResponse.json({ error: error.message }, { status: 409 });
@@ -77,6 +80,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_FISCALIZACAO", id);
     return NextResponse.json({ message: "Fiscalização excluída com sucesso." });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Fiscalização já revisada não pode ser excluída.") {

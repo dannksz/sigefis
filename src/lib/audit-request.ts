@@ -64,3 +64,26 @@ export async function auditSuccess(input: {
     },
   });
 }
+
+export async function auditRequestSuccess(
+  request: Request,
+  acao: string,
+  registroId?: number,
+  detalhes?: Record<string, unknown>,
+): Promise<void> {
+  const usuarioId = Number(request.headers.get("x-auth-user-id"));
+  if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) {
+    return;
+  }
+
+  await auditSuccess({
+    acao,
+    pathname: new URL(request.url).pathname,
+    usuarioId,
+    ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
+    registroId,
+    detalhes,
+  }).catch((error: unknown) =>
+    console.error(`Erro ao auditar ${acao}:`, error),
+  );
+}

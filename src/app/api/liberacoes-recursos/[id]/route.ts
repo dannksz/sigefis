@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseUpdateLiberacaoRecursoInput } from "@/lib/liberacao-recurso-validation";
 import { LiberacaoRecursoService } from "@/services/liberacao-recurso.service";
 
@@ -39,7 +40,9 @@ export async function PUT(request: Request, { params }: Params) {
   catch { return NextResponse.json({ error: "O corpo da requisição deve ser um JSON válido." }, { status: 400 }); }
   const input = parseUpdateLiberacaoRecursoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
-  try { return NextResponse.json(await service.update(id, input.data)); }
+  try { const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_LIBERACAO_RECURSO", result.id ?? id);
+    return NextResponse.json(result); }
   catch (error: unknown) {
     if (error instanceof Error && error.message === "Operação já decidida não pode ser alterada.") {
       return NextResponse.json({ error: error.message }, { status: 409 });
@@ -55,6 +58,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (id === null) return NextResponse.json({ error: "ID de liberação inválido." }, { status: 400 });
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_LIBERACAO_RECURSO", id);
     return NextResponse.json({ message: "Liberação excluída com sucesso." });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Operação já decidida não pode ser excluída.") {

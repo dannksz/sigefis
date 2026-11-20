@@ -12,8 +12,8 @@ export interface CreateRevisaoFiscalizacaoDTO {
 }
 
 export interface UpdateRevisaoFiscalizacaoDTO {
-  statusRevisao?: StatusRevisaoFiscalizacao;
-  parecer?: string;
+  statusRevisao: StatusRevisaoFiscalizacao;
+  parecer: string;
 }
 
 export interface RevisaoFiscalizacaoResponseDTO

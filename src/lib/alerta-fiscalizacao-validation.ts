@@ -74,7 +74,7 @@ export function parseUpdateAlertaFiscalizacaoInput(
   if (Object.keys(value).length === 0) {
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
-  const data: UpdateAlertaFiscalizacaoDTO = {};
+  const data: Partial<UpdateAlertaFiscalizacaoDTO> = {};
   const textFields = [
     ["tipoAlerta", 50],
     ["descricao", 65535],
@@ -97,5 +97,5 @@ export function parseUpdateAlertaFiscalizacaoInput(
       data[field] = value[field];
     }
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateAlertaFiscalizacaoDTO };
 }

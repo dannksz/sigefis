@@ -1,6 +1,7 @@
 import { parseListQuery } from "@/lib/pagination";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { CidadeService } from "@/services/cidade.service";
 import { parseCreateCidadeInput } from "@/lib/cidade-validation";
 
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
 
   try {
     const cidade = await cidadeService.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_CIDADE", cidade.id);
     return NextResponse.json(cidade, { status: 201 });
   } catch (error: unknown) {
     if (isEstadoNotFound(error)) {

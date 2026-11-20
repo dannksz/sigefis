@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseCreateProcessoRegularizacaoInput } from "@/lib/processo-regularizacao-validation";
 import { ProcessoRegularizacaoService } from "@/services/processo-regularizacao.service";
 
@@ -36,7 +37,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: input.error }, { status: 400 });
   }
   try {
-    return NextResponse.json(await service.create(input.data), { status: 201 });
+    const result = await service.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_PROCESSO_REGULARIZACAO", result.id);
+    return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (error instanceof Error && referenceErrors.includes(error.message)) {
       return NextResponse.json({ error: error.message }, { status: 404 });

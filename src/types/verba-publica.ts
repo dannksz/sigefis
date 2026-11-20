@@ -6,10 +6,10 @@ export interface CreateVerbaPublicaDTO {
 }
 
 export interface UpdateVerbaPublicaDTO {
-  valor?: string;
-  origem?: string;
-  finalidade?: string;
-  orgaoId?: number;
+  valor: string;
+  origem: string;
+  finalidade: string;
+  orgaoId: number;
 }
 
 export interface VerbaPublicaResponseDTO extends CreateVerbaPublicaDTO {

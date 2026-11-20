@@ -92,7 +92,7 @@ function typeofText(value: unknown, max: number): value is string {
 export function parseUpdateEtapaCronogramaInput(value: unknown): Result<UpdateEtapaCronogramaDTO> {
   if (!record(value) || !fields(value)) return { success: false, error: "Dados inválidos ou campos não permitidos." };
   if (!Object.keys(value).length) return { success: false, error: "Informe ao menos um campo para atualizar." };
-  const data: UpdateEtapaCronogramaDTO = {};
+  const data: Partial<UpdateEtapaCronogramaDTO> = {};
   if ("projetoObraId" in value && !id(value.projetoObraId)) return { success: false, error: "Projeto inválido." };
   if ("projetoObraId" in value) {
     data.projetoObraId = value.projetoObraId as number;
@@ -123,5 +123,5 @@ export function parseUpdateEtapaCronogramaInput(value: unknown): Result<UpdateEt
       if (field === "dataFimReal") data.dataFimReal = typeof value[field] === "string" ? value[field] : null;
     }
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateEtapaCronogramaDTO };
 }

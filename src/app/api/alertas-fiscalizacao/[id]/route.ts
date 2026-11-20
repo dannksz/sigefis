@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseUpdateAlertaFiscalizacaoInput } from "@/lib/alerta-fiscalizacao-validation";
 import { AlertaFiscalizacaoService } from "@/services/alerta-fiscalizacao.service";
 
@@ -48,7 +49,9 @@ export async function PUT(request: Request, { params }: Params) {
   const input = parseUpdateAlertaFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
-    return NextResponse.json(await service.update(id, input.data));
+    const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_ALERTA_FISCALIZACAO", result.id ?? id);
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (isReferenceError(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao atualizar alerta:", error);
@@ -61,6 +64,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (id === null) return NextResponse.json({ error: "ID de alerta inválido." }, { status: 400 });
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_ALERTA_FISCALIZACAO", id);
     return NextResponse.json({ message: "Alerta excluído com sucesso." });
   } catch (error: unknown) {
     if (isReferenceError(error)) return NextResponse.json({ error: error.message }, { status: 404 });

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseUpdatePagamentoInput } from "@/lib/pagamento-validation";
 import { PagamentoService } from "@/services/pagamento.service";
 
@@ -19,7 +20,9 @@ export async function PUT(request: Request, { params }: Params) {
   const id = parseId((await params).id); if (id === null) return NextResponse.json({ error: "ID de pagamento inválido." }, { status: 400 });
   let body: unknown; try { body = await request.json(); } catch { return NextResponse.json({ error: "O corpo da requisição deve ser um JSON válido." }, { status: 400 }); }
   const input = parseUpdatePagamentoInput(body); if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
-  try { return NextResponse.json(await service.update(id, input.data)); } catch (error: unknown) {
+  try { const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_PAGAMENTO", result.id ?? id);
+    return NextResponse.json(result); } catch (error: unknown) {
     if (error instanceof Error && error.message === "A etapa precisa de fiscalização revisada externamente.") {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
@@ -34,7 +37,8 @@ export async function PUT(request: Request, { params }: Params) {
 }
 export async function DELETE(_request: Request, { params }: Params) {
   const id = parseId((await params).id); if (id === null) return NextResponse.json({ error: "ID de pagamento inválido." }, { status: 400 });
-  try { await service.delete(id); return NextResponse.json({ message: "Pagamento excluído com sucesso." }); } catch (error: unknown) {
+  try { await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_PAGAMENTO", id); return NextResponse.json({ message: "Pagamento excluído com sucesso." }); } catch (error: unknown) {
     if (error instanceof Error && error.message === "Operação já decidida não pode ser excluída.") {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }

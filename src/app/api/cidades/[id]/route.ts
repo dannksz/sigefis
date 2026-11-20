@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { CidadeService } from "@/services/cidade.service";
 import { parseUpdateCidadeInput } from "@/lib/cidade-validation";
 
@@ -97,6 +98,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const cidade = await cidadeService.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_CIDADE", cidade.id ?? id);
     return NextResponse.json(cidade, { status: 200 });
   } catch (error: unknown) {
     if (isCidadeNotFound(error) || isEstadoNotFound(error)) {
@@ -131,6 +133,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     await cidadeService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_CIDADE", id);
     return NextResponse.json(
       { message: "Cidade deletada com sucesso." },
       { status: 200 },

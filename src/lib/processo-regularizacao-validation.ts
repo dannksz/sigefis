@@ -72,7 +72,7 @@ export function parseUpdateProcessoRegularizacaoInput(
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
 
-  const data: UpdateProcessoRegularizacaoDTO = {};
+  const data: Partial<UpdateProcessoRegularizacaoDTO> = {};
   if ("descricaoJustificativa" in value) {
     if (!text(value.descricaoJustificativa, 65535)) {
       return { success: false, error: "Descrição da justificativa inválida." };
@@ -93,5 +93,5 @@ export function parseUpdateProcessoRegularizacaoInput(
       data[field] = value[field];
     }
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateProcessoRegularizacaoDTO };
 }

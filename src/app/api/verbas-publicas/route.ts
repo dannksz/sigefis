@@ -1,5 +1,6 @@
 import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { VerbaPublicaService } from "@/services/verba-publica.service";
 import { parseCreateVerbaPublicaInput } from "@/lib/verba-publica-validation";
 
@@ -38,10 +39,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    return NextResponse.json(
-      await verbaPublicaService.create(input.data),
-      { status: 201 },
-    );
+    const result = await verbaPublicaService.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_VERBA_PUBLICA", result.id);
+    return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (isOrgaoNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });

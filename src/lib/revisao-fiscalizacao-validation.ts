@@ -69,7 +69,7 @@ export function parseUpdateRevisaoFiscalizacaoInput(
   if (Object.keys(value).length === 0) {
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
-  const data: UpdateRevisaoFiscalizacaoDTO = {};
+  const data: Partial<UpdateRevisaoFiscalizacaoDTO> = {};
   if ("statusRevisao" in value) {
     if (!isStatus(value.statusRevisao)) {
       return { success: false, error: "Status da revisão inválido." };
@@ -86,5 +86,5 @@ export function parseUpdateRevisaoFiscalizacaoInput(
     }
     data.parecer = value.parecer.trim();
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateRevisaoFiscalizacaoDTO };
 }

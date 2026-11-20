@@ -93,7 +93,7 @@ export function parseUpdateProjetoInput(
     };
   }
 
-  const data: UpdateProjetoDTO = {};
+  const data: Partial<UpdateProjetoDTO> = {};
 
   if ("nome" in value) {
     if (!isValidText(value.nome, 45)) {
@@ -132,5 +132,5 @@ export function parseUpdateProjetoInput(
     data.enderecoId = value.enderecoId;
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateProjetoDTO };
 }

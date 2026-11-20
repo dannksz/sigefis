@@ -116,7 +116,7 @@ export function parseUpdateVerbaPublicaInput(
     };
   }
 
-  const data: UpdateVerbaPublicaDTO = {};
+  const data: Partial<UpdateVerbaPublicaDTO> = {};
   if ("valor" in value) {
     const valor = parseMoney(value.valor);
     if (valor === null) {
@@ -146,5 +146,5 @@ export function parseUpdateVerbaPublicaInput(
     data.orgaoId = value.orgaoId;
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateVerbaPublicaDTO };
 }

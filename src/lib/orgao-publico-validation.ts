@@ -90,7 +90,7 @@ export function parseCreateOrgaoPublicoInput(
     }
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateOrgaoPublicoDTO };
 }
 
 export function parseUpdateOrgaoPublicoInput(
@@ -107,7 +107,7 @@ export function parseUpdateOrgaoPublicoInput(
     };
   }
 
-  const data: UpdateOrgaoPublicoDTO = {};
+  const data: Partial<UpdateOrgaoPublicoDTO> = {};
 
   if ("nome" in value) {
     if (!isValidText(value.nome)) {
@@ -148,5 +148,5 @@ export function parseUpdateOrgaoPublicoInput(
     }
   }
 
-  return { success: true, data };
+  return { success: true, data: data as UpdateOrgaoPublicoDTO };
 }

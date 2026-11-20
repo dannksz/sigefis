@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { ProjetoService } from "@/services/projeto.service";
 import { parseUpdateProjetoInput } from "@/lib/projeto-validation";
 
@@ -80,6 +81,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const projeto = await projetoService.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_PROJETO", projeto.id ?? id);
     return NextResponse.json(projeto, { status: 200 });
   } catch (error: unknown) {
     if (isProjetoNotFound(error) || isEnderecoNotFound(error)) {
@@ -107,6 +109,7 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   try {
     await projetoService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_PROJETO", id);
     return NextResponse.json(
       { message: "Projeto excluído com sucesso." },
       { status: 200 },

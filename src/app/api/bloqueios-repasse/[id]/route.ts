@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { parseUpdateBloqueioRepasseInput } from "@/lib/bloqueio-repasse-validation";
 import { BloqueioRepasseService } from "@/services/bloqueio-repasse.service";
 
@@ -48,7 +49,9 @@ export async function PUT(request: Request, { params }: Params) {
   const input = parseUpdateBloqueioRepasseInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
-    return NextResponse.json(await service.update(id, input.data));
+    const result = await service.update(id, input.data);
+    await auditRequestSuccess(request, "ATUALIZAR_BLOQUEIO_REPASSE", result.id ?? id);
+    return NextResponse.json(result);
   } catch (error: unknown) {
     if (isReferenceError(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao atualizar bloqueio:", error);
@@ -61,6 +64,7 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (id === null) return NextResponse.json({ error: "ID de bloqueio inválido." }, { status: 400 });
   try {
     await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_BLOQUEIO_REPASSE", id);
     return NextResponse.json({ message: "Bloqueio excluído com sucesso." });
   } catch (error: unknown) {
     if (isReferenceError(error)) return NextResponse.json({ error: error.message }, { status: 404 });

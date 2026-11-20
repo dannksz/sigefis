@@ -1,6 +1,7 @@
 import { parseListQuery } from "@/lib/pagination";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auditRequestSuccess } from "@/lib/audit-request";
 import { ContratoService } from "@/services/contrato.service";
 import { parseCreateContratoInput } from "@/lib/contrato-validation";
 
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
 
   try {
     const contrato = await contratoService.create(input.data);
+    await auditRequestSuccess(request, "CRIAR_CONTRATO", contrato.id);
     return NextResponse.json(contrato, { status: 201 });
   } catch (error: unknown) {
     if (isReferenceNotFound(error)) {

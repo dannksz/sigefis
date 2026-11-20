@@ -43,6 +43,9 @@ const fields = [
   "fiscalizacaoId",
 ];
 
+const evidencePathPattern =
+  /^\/(?:api\/evidencias-fiscalizacao\/\d+\/arquivo|uploads\/evidencias\/\d+)\/[a-f0-9-]+\.(?:jpg|png|pdf|mp4|webm)$/i;
+
 function hasOnlyFields(value: Record<string, unknown>): boolean {
   return Object.keys(value).every((key) => fields.includes(key));
 }
@@ -56,6 +59,7 @@ export function parseCreateEvidenciaFiscalizacaoInput(
   if (
     !isText(value.tipoEvidencia, 45) ||
     !isText(value.caminhoArquivo, 255) ||
+    !evidencePathPattern.test(value.caminhoArquivo) ||
     !isValidLatitude(value.latitude) ||
     !isValidLongitude(value.longitude) ||
     !isId(value.fiscalizacaoId)
@@ -83,7 +87,7 @@ export function parseUpdateEvidenciaFiscalizacaoInput(
   if (Object.keys(value).length === 0) {
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
-  const data: UpdateEvidenciaFiscalizacaoDTO = {};
+  const data: Partial<UpdateEvidenciaFiscalizacaoDTO> = {};
   for (const field of ["tipoEvidencia", "caminhoArquivo", "latitude", "longitude"] as const) {
     if (field in value) {
       if (field === "latitude" && !isValidLatitude(value[field])) {
@@ -95,6 +99,12 @@ export function parseUpdateEvidenciaFiscalizacaoInput(
       if (!isText(value[field], field === "caminhoArquivo" ? 255 : 45)) {
         return { success: false, error: `Campo ${field} inválido.` };
       }
+      if (
+        field === "caminhoArquivo" &&
+        !evidencePathPattern.test(value[field])
+      ) {
+        return { success: false, error: "Caminho de arquivo inválido." };
+      }
       data[field] = value[field].trim();
     }
   }
@@ -104,5 +114,5 @@ export function parseUpdateEvidenciaFiscalizacaoInput(
     }
     data.fiscalizacaoId = value.fiscalizacaoId;
   }
-  return { success: true, data };
+  return { success: true, data: data as UpdateEvidenciaFiscalizacaoDTO };
 }
