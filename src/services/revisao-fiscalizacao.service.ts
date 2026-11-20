@@ -9,6 +9,8 @@ import type {
   UpdateRevisaoFiscalizacaoDTO,
 } from "@/types/revisao-fiscalizacao";
 
+export const REVISAO_OUTRO_AUTOR = "Somente o autor autenticado pode editar a revisão.";
+
 export class RevisaoFiscalizacaoService {
   private repository = new RevisaoFiscalizacaoRepository();
   private fiscalizacaoRepository = new FiscalizacaoRepository();
@@ -76,8 +78,10 @@ export class RevisaoFiscalizacaoService {
   async update(
     id: number,
     data: UpdateRevisaoFiscalizacaoDTO,
+    usuarioId: number,
   ): Promise<RevisaoFiscalizacaoResponseDTO> {
-    await this.findById(id);
+    const current = await this.findById(id);
+    if (current.fiscalExternoId !== usuarioId) throw new Error(REVISAO_OUTRO_AUTOR);
     return this.repository.update(id, data);
   }
 

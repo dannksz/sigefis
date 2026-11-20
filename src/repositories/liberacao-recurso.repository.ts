@@ -74,11 +74,13 @@ export class LiberacaoRecursoRepository {
   async delete(id: number) {
     await prisma.liberacao_recurso.delete({ where: { id } });
   }
-  async sumByVerba(verbaPublicaId: number, excludeId?: number): Promise<string> {
+  async sumByProjetoAndVerba(projetoObraId: number, verbaPublicaId: number, excludeId?: number): Promise<string> {
     const result = await prisma.liberacao_recurso.aggregate({
       _sum: { valorLiberacao: true },
       where: {
         verbaPublicaId,
+        etapaCronograma: { projetoObraId },
+        status: { in: ["PENDENTE", "APROVADA"] },
         ...(excludeId !== undefined && { id: { not: excludeId } }),
       },
     });

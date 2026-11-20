@@ -220,14 +220,15 @@ export class PagamentoService {
       throw new Error("O pagamento exige liberação de recurso aprovada.");
     }
     await prisma.$transaction(async (tx) => {
-      await tx.pagamento.update({
-        where: { id },
+      const updated = await tx.pagamento.updateMany({
+        where: { id, status: "PENDENTE" },
         data: {
           status: "APROVADA",
           aprovadoPorUsuarioId,
           dataAprovacao: new Date(),
         },
       });
+      if (updated.count === 0) throw new Error("O pagamento não está pendente.");
       await tx.decisao_financeira.create({
         data: {
           tipoOperacao: "PAGAMENTO",
@@ -254,14 +255,15 @@ export class PagamentoService {
       throw new Error("Quem criou o pagamento não pode rejeitá-lo.");
     }
     await prisma.$transaction(async (tx) => {
-      await tx.pagamento.update({
-        where: { id },
+      const updated = await tx.pagamento.updateMany({
+        where: { id, status: "PENDENTE" },
         data: {
           status: "REJEITADA",
           aprovadoPorUsuarioId: usuarioId,
           dataAprovacao: new Date(),
         },
       });
+      if (updated.count === 0) throw new Error("O pagamento não está pendente.");
       await tx.decisao_financeira.create({
         data: {
           tipoOperacao: "PAGAMENTO",

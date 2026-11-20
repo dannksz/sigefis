@@ -426,7 +426,7 @@ async function main() {
         dataLiberacao: date("2026-05-20"),
         verbaPublicaId: verba.id,
         etapaCronogramaId: etapa.id,
-        status: "APROVADO",
+        status: "APROVADA",
         criadoPorUsuarioId: gestor.id,
         aprovadoPorUsuarioId: admin.id,
         dataAprovacao: date("2026-05-21"),
@@ -444,7 +444,7 @@ async function main() {
         numeroNotaFiscal: "NF-DEMO-0001",
         contratoId: contratoAtual.id,
         etapaCronogramaId: etapa.id,
-        status: "APROVADO",
+        status: "APROVADA",
         criadoPorUsuarioId: gestor.id,
         aprovadoPorUsuarioId: admin.id,
         dataAprovacao: date("2026-05-26"),
@@ -453,14 +453,14 @@ async function main() {
   }
 
   const decisao = await prisma.decisao_financeira.findFirst({
-    where: { tipoOperacao: "LIBERACAO", operacaoId: liberacaoAtual.id, status: "APROVADO" },
+    where: { tipoOperacao: "LIBERACAO", operacaoId: liberacaoAtual.id, status: "APROVADA" },
   });
   if (!decisao) {
     await prisma.decisao_financeira.create({
       data: {
         tipoOperacao: "LIBERACAO",
         operacaoId: liberacaoAtual.id,
-        status: "APROVADO",
+        status: "APROVADA",
         justificativa: "Registro de demonstração aprovado pelo administrador.",
         usuarioId: admin.id,
         dataDecisao: date("2026-05-21"),
@@ -476,7 +476,7 @@ async function main() {
       where: {
         tipoOperacao: "PAGAMENTO",
         operacaoId: pagamentoAtual.id,
-        status: "APROVADO",
+        status: "APROVADA",
       },
     });
     if (!decisaoPagamento) {
@@ -484,7 +484,7 @@ async function main() {
         data: {
           tipoOperacao: "PAGAMENTO",
           operacaoId: pagamentoAtual.id,
-          status: "APROVADO",
+          status: "APROVADA",
           justificativa: "Registro de demonstração aprovado pelo administrador.",
           usuarioId: admin.id,
           dataDecisao: date("2026-05-26"),

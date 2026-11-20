@@ -2,13 +2,14 @@ import type { ListQuery } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import { EtapaCronogramaRepository } from "@/repositories/etapa-cronograma.repository";
 import { LiberacaoRecursoRepository } from "@/repositories/liberacao-recurso.repository";
-import { ProjetoVerbaRepository } from "@/repositories/projeto-verba.repository";
 import { VerbaPublicaRepository } from "@/repositories/verba-publica.repository";
 import type {
   CreateLiberacaoRecursoDTO,
   LiberacaoRecursoResponseDTO,
   UpdateLiberacaoRecursoDTO,
 } from "@/types/liberacao-recurso";
+
+export const LIBERACAO_BLOQUEADA = "A obra possui bloqueio de repasse vigente.";
 
 function cents(value: string): bigint {
   const [integer, decimal = ""] = value.split(".");
@@ -24,7 +25,6 @@ export class LiberacaoRecursoService {
   private repository = new LiberacaoRecursoRepository();
   private etapaRepository = new EtapaCronogramaRepository();
   private verbaRepository = new VerbaPublicaRepository();
-  private projetoVerbaRepository = new ProjetoVerbaRepository();
 
   private async ensureLimit(
     verbaPublicaId: number,
@@ -37,13 +37,17 @@ export class LiberacaoRecursoService {
     if (!(await this.verbaRepository.existsById(verbaPublicaId))) {
       throw new Error("Verba pública não encontrada.");
     }
-    const vinculo = (await this.projetoVerbaRepository.findAll({ page: 1, pageSize: 100 })).data.find(
-      (item) => item.projetoObraId === etapa.projetoObraId && item.verbaPublicaId === verbaPublicaId,
-    );
-    if (!vinculo) throw new Error("A verba não está vinculada ao projeto da etapa.");
-    const liberado = cents(await this.repository.sumByVerba(verbaPublicaId, excludeId));
-    if (liberado + cents(valorLiberacao) > cents(vinculo.valorAlocado)) {
-      throw new Error(`O total de liberações excede o valor alocado (${money(cents(vinculo.valorAlocado))}).`);
+    const alocacao = await prisma.projeto_verba.aggregate({
+      where: { projetoObraId: etapa.projetoObraId, verbaPublicaId },
+      _sum: { valorAlocado: true },
+    });
+    if (!alocacao._sum.valorAlocado) throw new Error("A verba não está vinculada ao projeto da etapa.");
+    const alocado = cents(alocacao._sum.valorAlocado.toString());
+    const liberado = cents(await this.repository.sumByProjetoAndVerba(
+      etapa.projetoObraId, verbaPublicaId, excludeId,
+    ));
+    if (liberado + cents(valorLiberacao) > alocado) {
+      throw new Error(`O total de liberações excede o valor alocado (${money(alocado)}).`);
     }
   }
 
@@ -79,14 +83,23 @@ export class LiberacaoRecursoService {
       throw new Error("A liberação exige fiscalização revisada externamente.");
     }
     await prisma.$transaction(async (tx) => {
-      await tx.liberacao_recurso.update({
-        where: { id },
+      const updated = await tx.liberacao_recurso.updateMany({
+        where: { id, status: "PENDENTE" },
         data: {
           status: "APROVADA",
           aprovadoPorUsuarioId,
           dataAprovacao: new Date(),
         },
       });
+      if (updated.count === 0) throw new Error("A liberação não está pendente.");
+      const bloqueio = await tx.bloqueio_repasse.findFirst({
+        where: {
+          projetoObraId: etapa.projetoObraId,
+          OR: [{ dataDesbloqueio: null }, { dataDesbloqueio: { gt: new Date() } }],
+        },
+        select: { id: true },
+      });
+      if (bloqueio) throw new Error(LIBERACAO_BLOQUEADA);
       await tx.decisao_financeira.create({
         data: {
           tipoOperacao: "LIBERACAO",
@@ -140,14 +153,15 @@ export class LiberacaoRecursoService {
       throw new Error("Quem criou a liberação não pode rejeitá-la.");
     }
     await prisma.$transaction(async (tx) => {
-      await tx.liberacao_recurso.update({
-        where: { id },
+      const updated = await tx.liberacao_recurso.updateMany({
+        where: { id, status: "PENDENTE" },
         data: {
           status: "REJEITADA",
           aprovadoPorUsuarioId: usuarioId,
           dataAprovacao: new Date(),
         },
       });
+      if (updated.count === 0) throw new Error("A liberação não está pendente.");
       await tx.decisao_financeira.create({
         data: {
           tipoOperacao: "LIBERACAO",

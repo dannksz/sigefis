@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { LiberacaoRecursoService } from "@/services/liberacao-recurso.service";
+import { LIBERACAO_BLOQUEADA, LiberacaoRecursoService } from "@/services/liberacao-recurso.service";
 import { auditSuccess } from "@/lib/audit-request";
 
 const service = new LiberacaoRecursoService();
@@ -32,6 +32,7 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
     if (error instanceof Error && [
+      LIBERACAO_BLOQUEADA,
       "Liberação de recurso não encontrada.",
       "Quem criou a liberação não pode aprová-la.",
       "A liberação não está pendente.",

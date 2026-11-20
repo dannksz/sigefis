@@ -24,19 +24,23 @@ export async function POST(request: Request) {
   }
   const input = parseCreateRevisaoFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
+  const usuarioId = Number(request.headers.get("x-auth-user-id"));
+  if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0) {
+    return NextResponse.json({ error: "Usuário autenticado inválido." }, { status: 401 });
+  }
+  if (input.data.fiscalExternoId !== usuarioId) {
+    return NextResponse.json({ error: "Somente o fiscal autenticado pode assinar a revisão." }, { status: 403 });
+  }
   try {
     const result = await service.create(input.data);
-    const usuarioId = Number(request.headers.get("x-auth-user-id"));
-    if (Number.isSafeInteger(usuarioId) && usuarioId > 0) {
-      await auditSuccess({
-        acao: "CRIAR_REVISAO_FISCALIZACAO",
-        pathname: "/api/revisoes-fiscalizacao",
-        usuarioId,
-        ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
-        registroId: result.id,
-        detalhes: { fiscalizacaoId: result.fiscalizacaoId, statusRevisao: result.statusRevisao },
-      }).catch((error: unknown) => console.error("Erro ao auditar revisão:", error));
-    }
+    await auditSuccess({
+      acao: "CRIAR_REVISAO_FISCALIZACAO",
+      pathname: "/api/revisoes-fiscalizacao",
+      usuarioId,
+      ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
+      registroId: result.id,
+      detalhes: { fiscalizacaoId: result.fiscalizacaoId, statusRevisao: result.statusRevisao },
+    }).catch((error: unknown) => console.error("Erro ao auditar revisão:", error));
     return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
     if (error instanceof Error && [
