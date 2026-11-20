@@ -1,26 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --gray-100: var(--color-ice);
+  --gray-200: #e5e5e5;
+  --gray-300: #d4d4d4;
+  --gray-400: #a3a3a3;
+  --gray-500: #737373;
+  --gray-600: #525252;
+  --gray-700: #404040;
+  --gray-800: var(--color-graphite);
+  --gray-900: #171717;
+
+  --link-color: #FFFFFF;
+  --link-hover: #D9D9D9;
+
+  --success: #22c55e;
+  --warning: var(--color-primary);
+  --error: #cc092f;
+  --info: var(--color-graphite);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@theme static {
+  --color-primary-light: #fff17a;
+  --color-primary: #fde100;
+  --color-primary-dark: #c8ae00;
+
+  --color-secondary-light: #303030;
+  --color-secondary: #000000;
+  --color-secondary-dark: #000000;
+
+  --color-complementary: #ffffff;
+  --color-ice: #f5f5f5;
+  --color-graphite: var(--color-secondary-light);
+  --color-gray: var(--color-ice);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: var(--color-ice);
+    color: var(--color-secondary);
+    font-family: 'Space Grotesk', sans-serif;
+    max-width: 100%;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  main {
+    margin: 0;
+    padding: 0;
+  }
 }
