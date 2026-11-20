@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { ProjetoRepository } from "@/repositories/projeto.repository";
 import { EtapaCronogramaRepository } from "@/repositories/etapa-cronograma.repository";
 import type {
@@ -20,8 +21,8 @@ export class EtapaCronogramaService {
     await this.ensureProjeto(data.projetoObraId);
     return this.repository.create(data);
   }
-  findAll() {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
   async findById(id: number) {
     const item = await this.repository.findById(id);

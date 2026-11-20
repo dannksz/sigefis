@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { ProjetoVerbaService } from "@/services/projeto-verba.service";
 import { parseCreateProjetoVerbaInput } from "@/lib/projeto-verba-validation";
@@ -13,9 +14,9 @@ function isReferenceNotFound(error: unknown): error is Error {
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return NextResponse.json(await service.findAll());
+    return NextResponse.json(await service.findAll(parseListQuery(request)));
   } catch (error: unknown) {
     console.error("Erro ao listar vínculos projeto-verba:", error);
     return NextResponse.json({ error: "Erro interno ao listar vínculos." }, { status: 500 });

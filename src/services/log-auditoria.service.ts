@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { LogAuditoriaRepository } from "@/repositories/log-auditoria.repository";
 import { UserRepository } from "@/repositories/user.repository";
 import type {
@@ -20,8 +21,8 @@ export class LogAuditoriaService {
     return this.repository.create(data);
   }
 
-  findAll(): Promise<LogAuditoriaResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<LogAuditoriaResponseDTO> {

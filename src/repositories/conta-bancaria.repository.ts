@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { conta_bancaria } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -24,8 +25,18 @@ export class ContaBancariaRepository {
     return toResponseDTO(item);
   }
 
-  async findAll(): Promise<ContaBancariaResponseDTO[]> {
-    return (await prisma.conta_bancaria.findMany()).map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<ContaBancariaResponseDTO>> {
+    const where = {
+      ...(query.busca ? { OR: [{ banco: { contains: query.busca } }, { tipoConta: { contains: query.busca } }] } : {}),
+      ...(query.orgaoPublicoId ? { orgaoPublicoId: Number(query.orgaoPublicoId) } : {}),
+      ...(query.projetoObraId ? { projetoObraId: Number(query.projetoObraId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.conta_bancaria.count({ where }),
+      findMany: ({ skip, take }) => prisma.conta_bancaria.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<ContaBancariaResponseDTO | null> {

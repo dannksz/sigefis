@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { VerbaPublicaService } from "@/services/verba-publica.service";
 import { parseCreateVerbaPublicaInput } from "@/lib/verba-publica-validation";
@@ -8,9 +9,9 @@ function isOrgaoNotFound(error: unknown): error is Error {
   return error instanceof Error && error.message === "Órgão público não encontrado.";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return NextResponse.json(await verbaPublicaService.findAll(), { status: 200 });
+    return NextResponse.json(await verbaPublicaService.findAll(parseListQuery(request)), { status: 200 });
   } catch (error: unknown) {
     console.error("Erro ao listar verbas públicas:", error);
     return NextResponse.json(

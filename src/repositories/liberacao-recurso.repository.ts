@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { liberacao_recurso, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -50,8 +51,18 @@ export class LiberacaoRecursoRepository {
   async create(data: CreateLiberacaoRecursoDTO & { criadoPorUsuarioId: number }) {
     return response(await prisma.liberacao_recurso.create({ data: createData(data) }));
   }
-  async findAll() {
-    return (await prisma.liberacao_recurso.findMany()).map(response);
+  async findAll(query: ListQuery): Promise<PaginatedResult<ReturnType<typeof response>>> {
+    const where = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.verbaPublicaId ? { verbaPublicaId: Number(query.verbaPublicaId) } : {}),
+      ...(query.etapaCronogramaId ? { etapaCronogramaId: Number(query.etapaCronogramaId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.liberacao_recurso.count({ where }),
+      findMany: ({ skip, take }) => prisma.liberacao_recurso.findMany({ skip, take, where }),
+      map: response,
+    });
   }
   async findById(id: number) {
     const item = await prisma.liberacao_recurso.findUnique({ where: { id } });

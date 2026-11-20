@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { BloqueioRepasseRepository } from "@/repositories/bloqueio-repasse.repository";
 import { ProcessoRegularizacaoRepository } from "@/repositories/processo-regularizacao.repository";
 import { UserRepository } from "@/repositories/user.repository";
@@ -37,8 +38,8 @@ export class ProcessoRegularizacaoService {
     return this.repository.create(data);
   }
 
-  findAll(): Promise<ProcessoRegularizacaoResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<ProcessoRegularizacaoResponseDTO> {

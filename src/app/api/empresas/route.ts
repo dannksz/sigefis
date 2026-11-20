@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { EmpresaService } from "@/services/empresa.service";
 import { parseCreateEmpresaInput } from "@/lib/empresa-validation";
@@ -15,9 +16,9 @@ function isEnderecoNotFound(error: unknown): error is Error {
 
 export async function GET(request: Request) {
   try {
-    const empresas = await empresaService.findAll();
+    const empresas = await empresaService.findAll(parseListQuery(request));
     return NextResponse.json(
-      sanitizeEmpresaList(empresas, getResponseRole(request)),
+      { ...empresas, data: sanitizeEmpresaList(empresas.data, getResponseRole(request)) },
       { status: 200 },
     );
   } catch (error: unknown) {

@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { CidadeService } from "@/services/cidade.service";
@@ -26,9 +27,9 @@ function isEstadoNotFound(error: unknown): error is Error {
   return error instanceof Error && error.message === "Estado não encontrado.";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const cidades = await cidadeService.findAll();
+    const cidades = await cidadeService.findAll(parseListQuery(request));
     return NextResponse.json(cidades, { status: 200 });
   } catch (error: unknown) {
     console.error("Erro ao listar cidades:", error);

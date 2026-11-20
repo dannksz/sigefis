@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { decisao_financeira } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type { DecisaoFinanceiraResponseDTO } from "@/types/decisao-financeira";
@@ -17,12 +18,17 @@ function toResponseDTO(
 }
 
 export class DecisaoFinanceiraRepository {
-  async findAll(): Promise<DecisaoFinanceiraResponseDTO[]> {
-    return (
-      await prisma.decisao_financeira.findMany({
-        orderBy: { dataDecisao: "desc" },
-      })
-    ).map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<DecisaoFinanceiraResponseDTO>> {
+    const where = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.tipoOperacao ? { tipoOperacao: String(query.tipoOperacao) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.decisao_financeira.count({ where }),
+      findMany: ({ skip, take }) => prisma.decisao_financeira.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<DecisaoFinanceiraResponseDTO | null> {

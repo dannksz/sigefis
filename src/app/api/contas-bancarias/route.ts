@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { parseCreateContaBancariaInput } from "@/lib/conta-bancaria-validation";
 import { ContaBancariaService } from "@/services/conta-bancaria.service";
@@ -14,9 +15,9 @@ const referenceErrors = [
 
 export async function GET(request: Request) {
   try {
-    const items = await service.findAll();
+    const items = await service.findAll(parseListQuery(request));
     return NextResponse.json(
-      sanitizeContaBancariaList(items, getResponseRole(request)),
+      { ...items, data: sanitizeContaBancariaList(items.data, getResponseRole(request)) },
     );
   } catch (error: unknown) {
     console.error("Erro ao listar contas bancárias:", error);

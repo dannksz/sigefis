@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { parseCreateLiberacaoRecursoInput } from "@/lib/liberacao-recurso-validation";
 import { LiberacaoRecursoService } from "@/services/liberacao-recurso.service";
@@ -5,8 +6,8 @@ import { auditSuccess } from "@/lib/audit-request";
 
 const service = new LiberacaoRecursoService();
 
-export async function GET() {
-  try { return NextResponse.json(await service.findAll()); }
+export async function GET(request: Request) {
+  try { return NextResponse.json(await service.findAll(parseListQuery(request))); }
   catch (error: unknown) {
     console.error("Erro ao listar liberações:", error);
     return NextResponse.json({ error: "Erro interno ao listar liberações." }, { status: 500 });

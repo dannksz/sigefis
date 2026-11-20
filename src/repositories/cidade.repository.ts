@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { cidade } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import type { CidadeResponseDTO, CreateCidadeDTO, UpdateCidadeDTO } from '@/types/cidade';
@@ -22,10 +23,18 @@ export class CidadeRepository {
         return toResponseDTO(cidade);
     }
 
-    async findAll(): Promise<CidadeResponseDTO[]> {
-        const cidades = await prisma.cidade.findMany();
-        return cidades.map(toResponseDTO);
-    }
+    async findAll(query: ListQuery): Promise<PaginatedResult<CidadeResponseDTO>> {
+      const where = {
+        ...(query.busca ? { nome: { contains: query.busca } } : {}),
+        ...(query.estadoId ? { estadoId: query.estadoId } : {}),
+      };
+    return paginate({
+      query,
+        count: () => prisma.cidade.count({ where }),
+        findMany: ({ skip, take }) => prisma.cidade.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
+  }
 
     async findById(id: number): Promise<CidadeResponseDTO | null> {
         const cidade = await prisma.cidade.findUnique({

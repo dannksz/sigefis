@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { EmendaParlamentarRepository } from "@/repositories/emenda-parlamentar.repository";
 import { VerbaPublicaRepository } from "@/repositories/verba-publica.repository";
 import type {
@@ -28,8 +29,8 @@ export class EmendaParlamentarService {
     return this.emendaRepository.create(data);
   }
 
-  async findAll(): Promise<EmendaParlamentarResponseDTO[]> {
-    return this.emendaRepository.findAll();
+  async findAll(query: ListQuery) {
+    return this.emendaRepository.findAll(query);
   }
 
   async findById(id: number): Promise<EmendaParlamentarResponseDTO> {

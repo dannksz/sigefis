@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { revisao_fiscalizacao, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -29,8 +30,18 @@ export class RevisaoFiscalizacaoRepository {
       }),
     );
   }
-  async findAll(): Promise<RevisaoFiscalizacaoResponseDTO[]> {
-    return (await prisma.revisao_fiscalizacao.findMany()).map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<RevisaoFiscalizacaoResponseDTO>> {
+    const where = {
+      ...(query.status ? { statusRevisao: query.status } : {}),
+      ...(query.fiscalizacaoId ? { fiscalizacaoId: Number(query.fiscalizacaoId) } : {}),
+      ...(query.fiscalExternoId ? { fiscalExternoId: Number(query.fiscalExternoId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.revisao_fiscalizacao.count({ where }),
+      findMany: ({ skip, take }) => prisma.revisao_fiscalizacao.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
   async findById(id: number): Promise<RevisaoFiscalizacaoResponseDTO | null> {
     const item = await prisma.revisao_fiscalizacao.findUnique({ where: { id } });
@@ -38,13 +49,19 @@ export class RevisaoFiscalizacaoRepository {
   }
   async findByFiscalizacao(
     fiscalizacaoId: number,
-  ): Promise<RevisaoFiscalizacaoResponseDTO[]> {
-    return (
-      await prisma.revisao_fiscalizacao.findMany({
+    query: ListQuery,
+  ): Promise<PaginatedResult<RevisaoFiscalizacaoResponseDTO>> {
+    return paginate({
+      query,
+      count: () => prisma.revisao_fiscalizacao.count({ where: { fiscalizacaoId } }),
+      findMany: ({ skip, take }) => prisma.revisao_fiscalizacao.findMany({
         where: { fiscalizacaoId },
         orderBy: { dataRevisao: "desc" },
-      })
-    ).map(toResponseDTO);
+        skip,
+        take,
+      }),
+      map: toResponseDTO,
+    });
   }
   async update(
     id: number,

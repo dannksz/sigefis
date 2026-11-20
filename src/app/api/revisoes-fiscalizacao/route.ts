@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { parseCreateRevisaoFiscalizacaoInput } from "@/lib/revisao-fiscalizacao-validation";
 import { RevisaoFiscalizacaoService } from "@/services/revisao-fiscalizacao.service";
@@ -5,9 +6,9 @@ import { auditSuccess } from "@/lib/audit-request";
 
 const service = new RevisaoFiscalizacaoService();
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return NextResponse.json(await service.findAll());
+    return NextResponse.json(await service.findAll(parseListQuery(request)));
   } catch (error: unknown) {
     console.error("Erro ao listar revisões:", error);
     return NextResponse.json({ error: "Erro interno ao listar revisões." }, { status: 500 });

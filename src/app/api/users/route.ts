@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from 'next/server';
 import { UserService } from '@/services/user.service';
 import { parseCreateUserInput } from '@/lib/user-validation';
@@ -8,9 +9,9 @@ import {
 
 const userService = new UserService();
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const users = await userService.findAll();
+        const users = await userService.findAll(parseListQuery(request));
         return NextResponse.json(users, { status: 200 });
     } catch (error: unknown) {
         console.error('Erro ao listar usuários:', error);

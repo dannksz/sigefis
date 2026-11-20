@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { FiscalizacaoRepository } from "@/repositories/fiscalizacao.repository";
 import { EvidenciaFiscalizacaoRepository } from "@/repositories/evidencia-fiscalizacao.repository";
 import type {
@@ -23,8 +24,8 @@ export class EvidenciaFiscalizacaoService {
     return this.repository.create(data);
   }
 
-  findAll(): Promise<EvidenciaFiscalizacaoResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<EvidenciaFiscalizacaoResponseDTO> {

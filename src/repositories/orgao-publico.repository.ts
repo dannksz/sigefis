@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { orgao_publico } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type { CreateOrgaoPublicoDTO, OrgaoPublicoResponseDTO, UpdateOrgaoPublicoDTO } from "@/types/orgao-publico";
@@ -28,10 +29,25 @@ export class OrgaoPublicoRepository {
         return toResponseDTO(orgaoPublico); 
     }
 
-    async findAll(): Promise<OrgaoPublicoResponseDTO[]> {
-        const orgaosPublicos = await prisma.orgao_publico.findMany();
-        return orgaosPublicos.map(toResponseDTO);
-    }
+    async findAll(query: ListQuery): Promise<PaginatedResult<OrgaoPublicoResponseDTO>> {
+      const where = {
+        ...(query.busca ? { OR: [{ nome: { contains: query.busca } }, { sigla: { contains: query.busca } }] } : {}),
+        ...(query.cidadeId || query.estadoId ? {
+          endereco: {
+            cidade: {
+              ...(query.cidadeId ? { id: query.cidadeId } : {}),
+              ...(query.estadoId ? { estadoId: query.estadoId } : {}),
+            },
+          },
+        } : {}),
+      };
+    return paginate({
+      query,
+        count: () => prisma.orgao_publico.count({ where }),
+        findMany: ({ skip, take }) => prisma.orgao_publico.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
+  }
 
     async findById(id: number): Promise<OrgaoPublicoResponseDTO | null> {
         const orgaoPublico = await prisma.orgao_publico.findUnique({

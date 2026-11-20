@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { obra_fiscal } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -26,9 +27,18 @@ export class ObraFiscalRepository {
     return toResponseDTO(item);
   }
 
-  async findAll(): Promise<ObraFiscalResponseDTO[]> {
-    const items = await prisma.obra_fiscal.findMany();
-    return items.map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<ObraFiscalResponseDTO>> {
+    const where = {
+      ...(query.projetoObraId ? { projetoObraId: Number(query.projetoObraId) } : {}),
+      ...(query.usuarioId ? { usuarioId: Number(query.usuarioId) } : {}),
+      ...(query.tipoFiscal ? { tipoFiscal: String(query.tipoFiscal) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.obra_fiscal.count({ where }),
+      findMany: ({ skip, take }) => prisma.obra_fiscal.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<ObraFiscalResponseDTO | null> {

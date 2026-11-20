@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { EstadoRepository } from '@/repositories/estado.repository';
 import type { CreateEstadoDTO, UpdateEstadoDTO, EstadoResponseDTO } from '../types/estado';
 
@@ -12,9 +13,9 @@ export class EstadoService {
         return this.estadoRepository.create(data);
     }
 
-    async findAll(): Promise<EstadoResponseDTO[]> {
-        return this.estadoRepository.findAll();
-    }
+    async findAll(query: ListQuery) {
+    return this.estadoRepository.findAll(query);
+  }
 
     async findById(id: number): Promise<EstadoResponseDTO> {
         const estado = await this.estadoRepository.findById(id);

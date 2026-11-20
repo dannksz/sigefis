@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { parseCreateEvidenciaFiscalizacaoInput } from "@/lib/evidencia-fiscalizacao-validation";
 import { EvidenciaFiscalizacaoService } from "@/services/evidencia-fiscalizacao.service";
@@ -5,9 +6,9 @@ import { auditSuccess } from "@/lib/audit-request";
 
 const service = new EvidenciaFiscalizacaoService();
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return NextResponse.json(await service.findAll());
+    return NextResponse.json(await service.findAll(parseListQuery(request)));
   } catch (error: unknown) {
     console.error("Erro ao listar evidências:", error);
     return NextResponse.json(

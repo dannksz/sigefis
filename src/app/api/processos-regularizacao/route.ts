@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { parseCreateProcessoRegularizacaoInput } from "@/lib/processo-regularizacao-validation";
 import { ProcessoRegularizacaoService } from "@/services/processo-regularizacao.service";
@@ -8,9 +9,9 @@ const referenceErrors = [
   "Usuário não encontrado.",
 ];
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return NextResponse.json(await service.findAll());
+    return NextResponse.json(await service.findAll(parseListQuery(request)));
   } catch (error: unknown) {
     console.error("Erro ao listar processos de regularização:", error);
     return NextResponse.json(

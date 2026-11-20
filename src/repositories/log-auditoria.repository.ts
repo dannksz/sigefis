@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { log_auditoria, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -38,8 +39,13 @@ export class LogAuditoriaRepository {
     );
   }
 
-  async findAll(): Promise<LogAuditoriaResponseDTO[]> {
-    return (await prisma.log_auditoria.findMany()).map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<LogAuditoriaResponseDTO>> {
+    return paginate({
+      query,
+      count: () => prisma.log_auditoria.count(),
+      findMany: ({ skip, take }) => prisma.log_auditoria.findMany({ skip, take }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<LogAuditoriaResponseDTO | null> {

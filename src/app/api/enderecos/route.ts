@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { EnderecoService } from "@/services/endereco.service";
 import { parseCreateEnderecoInput } from "@/lib/endereco-validation";
@@ -8,9 +9,9 @@ function isCidadeNotFound(error: unknown): error is Error {
   return error instanceof Error && error.message === "Cidade não encontrada.";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const enderecos = await enderecoService.findAll();
+    const enderecos = await enderecoService.findAll(parseListQuery(request));
     return NextResponse.json(enderecos, { status: 200 });
   } catch (error: unknown) {
     console.error("Erro ao listar endereços:", error);

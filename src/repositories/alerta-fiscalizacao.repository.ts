@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { alerta_fiscalizacao, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -42,8 +43,18 @@ export class AlertaFiscalizacaoRepository {
     );
   }
 
-  async findAll(): Promise<AlertaFiscalizacaoResponseDTO[]> {
-    return (await prisma.alerta_fiscalizacao.findMany()).map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<AlertaFiscalizacaoResponseDTO>> {
+    const where = {
+      ...(query.status ? { statusAlerta: query.status } : {}),
+      ...(query.severidade ? { severidade: String(query.severidade) } : {}),
+      ...(query.projetoObraId ? { projetoObraId: Number(query.projetoObraId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.alerta_fiscalizacao.count({ where }),
+      findMany: ({ skip, take }) => prisma.alerta_fiscalizacao.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<AlertaFiscalizacaoResponseDTO | null> {

@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { empresa } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -34,9 +35,24 @@ export class EmpresaRepository {
     return toResponseDTO(empresa);
   }
 
-  async findAll(): Promise<EmpresaResponseDTO[]> {
-    const empresas = await prisma.empresa.findMany();
-    return empresas.map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<EmpresaResponseDTO>> {
+    const where = {
+      ...(query.busca ? { OR: [{ nome: { contains: query.busca } }, { cnpj: { contains: query.busca } }, { email: { contains: query.busca } }] } : {}),
+      ...(query.cidadeId || query.estadoId ? {
+        endereco: {
+          cidade: {
+            ...(query.cidadeId ? { id: query.cidadeId } : {}),
+            ...(query.estadoId ? { estadoId: query.estadoId } : {}),
+          },
+        },
+      } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.empresa.count({ where }),
+      findMany: ({ skip, take }) => prisma.empresa.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<EmpresaResponseDTO | null> {

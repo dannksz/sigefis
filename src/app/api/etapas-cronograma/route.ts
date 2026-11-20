@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { EtapaCronogramaService } from "@/services/etapa-cronograma.service";
 import { parseCreateEtapaCronogramaInput } from "@/lib/etapa-cronograma-validation";
@@ -7,8 +8,8 @@ function isProjetoNotFound(e: unknown): e is Error {
   return e instanceof Error && e.message === "Projeto não encontrado.";
 }
 
-export async function GET() {
-  try { return NextResponse.json(await service.findAll()); }
+export async function GET(request: Request) {
+  try { return NextResponse.json(await service.findAll(parseListQuery(request))); }
   catch (error) {
     console.error("Erro ao listar etapas:", error);
     return NextResponse.json({ error: "Erro interno ao listar etapas." }, { status: 500 });

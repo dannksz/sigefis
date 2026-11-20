@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { EstadoService } from "@/services/estado.service";
 import { parseCreateEstadoInput } from "@/lib/estado-validation";
@@ -5,9 +6,9 @@ import { isEstadoSiglaConflict } from "@/lib/estado-errors";
 
 const estadoService = new EstadoService();
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const estados = await estadoService.findAll();
+        const estados = await estadoService.findAll(parseListQuery(request));
         return NextResponse.json(estados, { status: 200 });
     } catch (error: unknown) {
         console.error("Erro ao listar estados:", error);

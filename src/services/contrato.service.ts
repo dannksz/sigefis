@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { EmpresaRepository } from "@/repositories/empresa.repository";
 import { ProjetoRepository } from "@/repositories/projeto.repository";
 import { ContratoRepository } from "@/repositories/contrato.repository";
@@ -60,8 +61,8 @@ export class ContratoService {
     return this.contratoRepository.create(data);
   }
 
-  async findAll(): Promise<ContratoResponseDTO[]> {
-    return this.contratoRepository.findAll();
+  async findAll(query: ListQuery) {
+    return this.contratoRepository.findAll(query);
   }
 
   async findById(id: number): Promise<ContratoResponseDTO> {

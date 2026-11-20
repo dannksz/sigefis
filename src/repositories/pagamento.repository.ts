@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { pagamento, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type { CreatePagamentoDTO, PagamentoResponseDTO, UpdatePagamentoDTO } from "@/types/pagamento";
@@ -38,7 +39,19 @@ export class PagamentoRepository {
   async createWithClient(client: Prisma.TransactionClient, data: CreatePagamentoDTO & { criadoPorUsuarioId: number }) {
     return response(await client.pagamento.create({ data: createData(data) }));
   }
-  async findAll() { return (await prisma.pagamento.findMany()).map(response); }
+  async findAll(query: ListQuery): Promise<PaginatedResult<ReturnType<typeof response>>> {
+    const where = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.contratoId ? { contratoId: Number(query.contratoId) } : {}),
+      ...(query.etapaCronogramaId ? { etapaCronogramaId: Number(query.etapaCronogramaId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.pagamento.count({ where }),
+      findMany: ({ skip, take }) => prisma.pagamento.findMany({ skip, take, where }),
+      map: response,
+    });
+  }
   async findById(id: number) {
     const item = await prisma.pagamento.findUnique({ where: { id } });
     return item ? response(item) : null;

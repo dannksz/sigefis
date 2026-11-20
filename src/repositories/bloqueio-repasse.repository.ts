@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { bloqueio_repasse, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -49,8 +50,17 @@ export class BloqueioRepasseRepository {
     );
   }
 
-  async findAll(): Promise<BloqueioRepasseResponseDTO[]> {
-    return (await prisma.bloqueio_repasse.findMany()).map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<BloqueioRepasseResponseDTO>> {
+    const where = {
+      ...(query.status ? { statusBloqueio: query.status } : {}),
+      ...(query.projetoObraId ? { projetoObraId: Number(query.projetoObraId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.bloqueio_repasse.count({ where }),
+      findMany: ({ skip, take }) => prisma.bloqueio_repasse.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<BloqueioRepasseResponseDTO | null> {

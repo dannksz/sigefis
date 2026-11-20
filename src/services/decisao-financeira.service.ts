@@ -1,11 +1,12 @@
+import type { ListQuery } from "@/lib/pagination";
 import { DecisaoFinanceiraRepository } from "@/repositories/decisao-financeira.repository";
 import type { DecisaoFinanceiraResponseDTO } from "@/types/decisao-financeira";
 
 export class DecisaoFinanceiraService {
   private repository = new DecisaoFinanceiraRepository();
 
-  findAll(): Promise<DecisaoFinanceiraResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<DecisaoFinanceiraResponseDTO> {

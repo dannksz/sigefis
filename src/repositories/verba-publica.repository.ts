@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { verba_publica } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -25,9 +26,18 @@ export class VerbaPublicaRepository {
     return toResponseDTO(verba);
   }
 
-  async findAll(): Promise<VerbaPublicaResponseDTO[]> {
-    const verbas = await prisma.verba_publica.findMany();
-    return verbas.map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<VerbaPublicaResponseDTO>> {
+    const where = {
+      ...(query.busca ? { OR: [{ origem: { contains: query.busca } }, { finalidade: { contains: query.busca } }] } : {}),
+      ...(query.finalidade ? { finalidade: { contains: String(query.finalidade) } } : {}),
+      ...(query.orgaoId ? { orgaoId: Number(query.orgaoId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.verba_publica.count({ where }),
+      findMany: ({ skip, take }) => prisma.verba_publica.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<VerbaPublicaResponseDTO | null> {

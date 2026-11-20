@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { parseCreatePagamentoInput } from "@/lib/pagamento-validation";
@@ -6,8 +7,8 @@ import { auditSuccess } from "@/lib/audit-request";
 
 const service = new PagamentoService();
 const notFound = ["Contrato não encontrado.", "Etapa do cronograma não encontrada.", "A etapa não pertence ao projeto do contrato."];
-export async function GET() {
-  try { return NextResponse.json(await service.findAll()); }
+export async function GET(request: Request) {
+  try { return NextResponse.json(await service.findAll(parseListQuery(request))); }
   catch (error: unknown) { console.error("Erro ao listar pagamentos:", error); return NextResponse.json({ error: "Erro interno ao listar pagamentos." }, { status: 500 }); }
 }
 export async function POST(request: Request) {

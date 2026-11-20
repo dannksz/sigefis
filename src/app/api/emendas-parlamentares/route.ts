@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { NextResponse } from "next/server";
 import { EmendaParlamentarService } from "@/services/emenda-parlamentar.service";
 import { parseCreateEmendaParlamentarInput } from "@/lib/emenda-parlamentar-validation";
@@ -8,9 +9,9 @@ function isVerbaNotFound(error: unknown): error is Error {
   return error instanceof Error && error.message === "Verba pública não encontrada.";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    return NextResponse.json(await service.findAll(), { status: 200 });
+    return NextResponse.json(await service.findAll(parseListQuery(request)), { status: 200 });
   } catch (error: unknown) {
     console.error("Erro ao listar emendas parlamentares:", error);
     return NextResponse.json(

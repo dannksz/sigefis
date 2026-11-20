@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { UserRepository } from "../repositories/user.repository";
 import { EnderecoRepository } from "../repositories/endereco.repository";
 import { CreateUserDTO, UpdateUserDTO, UserResponseDTO } from "../types/user";
@@ -32,8 +33,8 @@ export class UserService {
   }
 
   //2. Listar todos os usuários
-  async findAll(): Promise<UserResponseDTO[]> {
-    return await this.userRepository.findAll();
+  async findAll(query: ListQuery) {
+    return this.userRepository.findAll(query);
   }
 
   //3. Buscar usuário por ID

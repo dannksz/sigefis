@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { etapa_cronograma, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -79,8 +80,17 @@ export class EtapaCronogramaRepository {
   async create(data: CreateEtapaCronogramaDTO) {
     return response(await prisma.etapa_cronograma.create({ data: toCreateData(data) }));
   }
-  async findAll() {
-    return (await prisma.etapa_cronograma.findMany()).map(response);
+  async findAll(query: ListQuery): Promise<PaginatedResult<ReturnType<typeof response>>> {
+    const where = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.projetoObraId ? { projetoObraId: Number(query.projetoObraId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.etapa_cronograma.count({ where }),
+      findMany: ({ skip, take }) => prisma.etapa_cronograma.findMany({ skip, take, where }),
+      map: response,
+    });
   }
   async findById(id: number) {
     const item = await prisma.etapa_cronograma.findUnique({ where: { id } });

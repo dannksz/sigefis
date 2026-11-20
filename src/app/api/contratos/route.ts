@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ContratoService } from "@/services/contrato.service";
@@ -25,9 +26,9 @@ function isForeignKeyConstraintError(
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const contratos = await contratoService.findAll();
+    const contratos = await contratoService.findAll(parseListQuery(request));
     return NextResponse.json(contratos, { status: 200 });
   } catch (error: unknown) {
     console.error("Erro ao listar contratos:", error);

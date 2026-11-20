@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import { FiscalizacaoRepository } from "@/repositories/fiscalizacao.repository";
 import { RevisaoFiscalizacaoRepository } from "@/repositories/revisao-fiscalizacao.repository";
@@ -62,8 +63,8 @@ export class RevisaoFiscalizacaoService {
     });
   }
 
-  findAll(): Promise<RevisaoFiscalizacaoResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<RevisaoFiscalizacaoResponseDTO> {
@@ -87,7 +88,8 @@ export class RevisaoFiscalizacaoService {
 
   findByFiscalizacao(
     fiscalizacaoId: number,
-  ): Promise<RevisaoFiscalizacaoResponseDTO[]> {
-    return this.repository.findByFiscalizacao(fiscalizacaoId);
+    query: ListQuery,
+  ) {
+    return this.repository.findByFiscalizacao(fiscalizacaoId, query);
   }
 }

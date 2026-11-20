@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { processo_regularizacao, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -40,8 +41,17 @@ export class ProcessoRegularizacaoRepository {
     );
   }
 
-  async findAll(): Promise<ProcessoRegularizacaoResponseDTO[]> {
-    return (await prisma.processo_regularizacao.findMany()).map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<ProcessoRegularizacaoResponseDTO>> {
+    const where = {
+      ...(query.status ? { statusProcesso: query.status } : {}),
+      ...(query.bloqueioRepasseId ? { bloqueioRepasseId: Number(query.bloqueioRepasseId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.processo_regularizacao.count({ where }),
+      findMany: ({ skip, take }) => prisma.processo_regularizacao.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(

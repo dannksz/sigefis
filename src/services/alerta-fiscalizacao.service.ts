@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { AlertaFiscalizacaoRepository } from "@/repositories/alerta-fiscalizacao.repository";
 import { FiscalizacaoRepository } from "@/repositories/fiscalizacao.repository";
 import { ProjetoRepository } from "@/repositories/projeto.repository";
@@ -43,8 +44,8 @@ export class AlertaFiscalizacaoService {
     return this.repository.create(data);
   }
 
-  findAll(): Promise<AlertaFiscalizacaoResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<AlertaFiscalizacaoResponseDTO> {

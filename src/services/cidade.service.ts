@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { CidadeRepository } from "@/repositories/cidade.repository";
 import { EstadoRepository } from "@/repositories/estado.repository";
 import type { CidadeResponseDTO, CreateCidadeDTO, UpdateCidadeDTO } from "@/types/cidade";
@@ -24,9 +25,9 @@ export class CidadeService {
         return this.cidadeRepository.create(data);
     }
 
-    async findAll(): Promise<CidadeResponseDTO[]> {
-        return this.cidadeRepository.findAll();
-    }
+    async findAll(query: ListQuery) {
+    return this.cidadeRepository.findAll(query);
+  }
 
     async findById(id: number): Promise<CidadeResponseDTO> {
         const cidade = await this.cidadeRepository.findById(id);

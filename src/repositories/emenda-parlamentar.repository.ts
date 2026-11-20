@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { emenda_parlamentar } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -26,9 +27,17 @@ export class EmendaParlamentarRepository {
     return toResponseDTO(emenda);
   }
 
-  async findAll(): Promise<EmendaParlamentarResponseDTO[]> {
-    const emendas = await prisma.emenda_parlamentar.findMany();
-    return emendas.map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<EmendaParlamentarResponseDTO>> {
+    const where = {
+      ...(query.busca ? { OR: [{ numero: { contains: query.busca } }, { autor: { contains: query.busca } }] } : {}),
+      ...(query.verbaId ? { verbaId: Number(query.verbaId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.emenda_parlamentar.count({ where }),
+      findMany: ({ skip, take }) => prisma.emenda_parlamentar.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<EmendaParlamentarResponseDTO | null> {

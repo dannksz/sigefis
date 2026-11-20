@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { CidadeRepository } from "@/repositories/cidade.repository";
 import { EnderecoRepository } from "@/repositories/endereco.repository";
 import type {
@@ -28,8 +29,8 @@ export class EnderecoService {
     return this.enderecoRepository.create(data);
   }
 
-  async findAll(): Promise<EnderecoResponseDTO[]> {
-    return this.enderecoRepository.findAll();
+  async findAll(query: ListQuery) {
+    return this.enderecoRepository.findAll(query);
   }
 
   async findById(id: number): Promise<EnderecoResponseDTO> {

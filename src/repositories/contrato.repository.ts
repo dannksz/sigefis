@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { contrato } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -42,9 +43,19 @@ export class ContratoRepository {
     return toResponseDTO(contrato);
   }
 
-  async findAll(): Promise<ContratoResponseDTO[]> {
-    const contratos = await prisma.contrato.findMany();
-    return contratos.map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<ContratoResponseDTO>> {
+    const where = {
+      ...(query.busca ? { numeroContrato: { contains: query.busca } } : {}),
+      ...(query.projetoObraId ? { projetoObraId: Number(query.projetoObraId) } : {}),
+      ...(query.empresaId ? { empresaId: Number(query.empresaId) } : {}),
+      ...(query.verbaPublicaId ? { verbaPublicaId: Number(query.verbaPublicaId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.contrato.count({ where }),
+      findMany: ({ skip, take }) => prisma.contrato.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<ContratoResponseDTO | null> {

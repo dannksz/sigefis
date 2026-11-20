@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { evidencia_fiscalizacao, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -41,8 +42,17 @@ export class EvidenciaFiscalizacaoRepository {
     );
   }
 
-  async findAll(): Promise<EvidenciaFiscalizacaoResponseDTO[]> {
-    return (await prisma.evidencia_fiscalizacao.findMany()).map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<EvidenciaFiscalizacaoResponseDTO>> {
+    const where = {
+      ...(query.busca ? { tipoEvidencia: { contains: query.busca } } : {}),
+      ...(query.fiscalizacaoId ? { fiscalizacaoId: Number(query.fiscalizacaoId) } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.evidencia_fiscalizacao.count({ where }),
+      findMany: ({ skip, take }) => prisma.evidencia_fiscalizacao.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(

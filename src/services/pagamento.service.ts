@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import { PagamentoRepository } from "@/repositories/pagamento.repository";
 import type {
@@ -89,8 +90,8 @@ export class PagamentoService {
     });
   }
 
-  findAll(): Promise<PagamentoResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<PagamentoResponseDTO> {

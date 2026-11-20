@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { EnderecoRepository } from "@/repositories/endereco.repository";
 import { OrgaoPublicoRepository } from "@/repositories/orgao-publico.repository";
 import type {
@@ -33,8 +34,8 @@ export class OrgaoPublicoService {
     return this.orgaoPublicoRepository.create(data);
   }
 
-  async findAll(): Promise<OrgaoPublicoResponseDTO[]> {
-    return this.orgaoPublicoRepository.findAll();
+  async findAll(query: ListQuery) {
+    return this.orgaoPublicoRepository.findAll(query);
   }
 
   async findById(id: number): Promise<OrgaoPublicoResponseDTO> {

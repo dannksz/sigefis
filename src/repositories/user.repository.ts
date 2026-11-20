@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { usuario } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { CreateUserDTO, UpdateUserDTO, UserResponseDTO } from '../types/user';
@@ -34,9 +35,17 @@ export class UserRepository {
     return toResponseDTO(user);
   }
 
-  async findAll(): Promise<UserResponseDTO[]> {
-    const users = await prisma.usuario.findMany();
-    return users.map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<UserResponseDTO>> {
+    const where = {
+      ...(query.busca ? { OR: [{ nome: { contains: query.busca } }, { email: { contains: query.busca } }, { cpf: { contains: query.busca } }] } : {}),
+      ...(query.role ? { role: query.role as "ADMIN" | "FISCAL" | "GESTOR" | "USER" } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.usuario.count({ where }),
+      findMany: ({ skip, take }) => prisma.usuario.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<UserResponseDTO | null> {

@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { ContaBancariaRepository } from "@/repositories/conta-bancaria.repository";
 import { OrgaoPublicoRepository } from "@/repositories/orgao-publico.repository";
 import { ProjetoRepository } from "@/repositories/projeto.repository";
@@ -35,8 +36,8 @@ export class ContaBancariaService {
     return this.repository.create(data);
   }
 
-  findAll(): Promise<ContaBancariaResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<ContaBancariaResponseDTO> {

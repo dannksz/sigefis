@@ -1,3 +1,4 @@
+import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { endereco } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
@@ -34,9 +35,22 @@ export class EnderecoRepository {
     return toResponseDTO(endereco);
   }
 
-  async findAll(): Promise<EnderecoResponseDTO[]> {
-    const enderecos = await prisma.endereco.findMany();
-    return enderecos.map(toResponseDTO);
+  async findAll(query: ListQuery): Promise<PaginatedResult<EnderecoResponseDTO>> {
+    const where = {
+      ...(query.busca ? { OR: [{ logradouro: { contains: query.busca } }, { bairro: { contains: query.busca } }, { cep: { contains: query.busca } }] } : {}),
+      ...(query.cidadeId || query.estadoId ? {
+        cidade: {
+          ...(query.cidadeId ? { id: query.cidadeId } : {}),
+          ...(query.estadoId ? { estadoId: query.estadoId } : {}),
+        },
+      } : {}),
+    };
+    return paginate({
+      query,
+      count: () => prisma.endereco.count({ where }),
+      findMany: ({ skip, take }) => prisma.endereco.findMany({ skip, take, where }),
+      map: toResponseDTO,
+    });
   }
 
   async findById(id: number): Promise<EnderecoResponseDTO | null> {

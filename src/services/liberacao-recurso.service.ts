@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
 import { EtapaCronogramaRepository } from "@/repositories/etapa-cronograma.repository";
 import { LiberacaoRecursoRepository } from "@/repositories/liberacao-recurso.repository";
@@ -36,7 +37,7 @@ export class LiberacaoRecursoService {
     if (!(await this.verbaRepository.existsById(verbaPublicaId))) {
       throw new Error("Verba pública não encontrada.");
     }
-    const vinculo = (await this.projetoVerbaRepository.findAll()).find(
+    const vinculo = (await this.projetoVerbaRepository.findAll({ page: 1, pageSize: 100 })).data.find(
       (item) => item.projetoObraId === etapa.projetoObraId && item.verbaPublicaId === verbaPublicaId,
     );
     if (!vinculo) throw new Error("A verba não está vinculada ao projeto da etapa.");
@@ -100,7 +101,9 @@ export class LiberacaoRecursoService {
     if (!response) throw new Error("Liberação de recurso não encontrada.");
     return response;
   }
-  findAll() { return this.repository.findAll(); }
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
+  }
   async findById(id: number): Promise<LiberacaoRecursoResponseDTO> {
     const item = await this.repository.findById(id);
     if (!item) throw new Error("Liberação de recurso não encontrada.");

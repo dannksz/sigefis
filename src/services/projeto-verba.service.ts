@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { ProjetoRepository } from "@/repositories/projeto.repository";
 import { ProjetoVerbaRepository } from "@/repositories/projeto-verba.repository";
 import { VerbaPublicaRepository } from "@/repositories/verba-publica.repository";
@@ -35,8 +36,8 @@ export class ProjetoVerbaService {
     return this.repository.create(data);
   }
 
-  findAll(): Promise<ProjetoVerbaResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<ProjetoVerbaResponseDTO> {

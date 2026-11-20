@@ -1,3 +1,4 @@
+import type { ListQuery } from "@/lib/pagination";
 import { ProjetoRepository } from "@/repositories/projeto.repository";
 import { UserRepository } from "@/repositories/user.repository";
 import { ObraFiscalRepository } from "@/repositories/obra-fiscal.repository";
@@ -38,8 +39,8 @@ export class ObraFiscalService {
     return this.repository.create(data);
   }
 
-  findAll(): Promise<ObraFiscalResponseDTO[]> {
-    return this.repository.findAll();
+  async findAll(query: ListQuery) {
+    return this.repository.findAll(query);
   }
 
   async findById(id: number): Promise<ObraFiscalResponseDTO> {

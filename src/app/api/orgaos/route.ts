@@ -1,3 +1,4 @@
+import { parseListQuery } from "@/lib/pagination";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { OrgaoPublicoService } from "@/services/orgao-publico.service";
@@ -18,9 +19,9 @@ function isForeignKeyConstraintError(
   );
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const orgaosPublicos = await orgaoPublicoService.findAll();
+    const orgaosPublicos = await orgaoPublicoService.findAll(parseListQuery(request));
     return NextResponse.json(orgaosPublicos, { status: 200 });
   } catch (error: unknown) {
     console.error("Erro ao listar órgãos públicos:", error);
