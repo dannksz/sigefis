@@ -18,7 +18,7 @@ export async function GET(_request: Request, { params }: Params) {
   try {
     const obra = await service.findById(id);
     return NextResponse.json(obra, {
-      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+      headers: { "Cache-Control": "no-store" },
     });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Obra pública não encontrada.") {

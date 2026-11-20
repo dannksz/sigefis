@@ -8,9 +8,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function hasOnlyFields(value: Record<string, unknown>): boolean {
+function hasOnlyFields(value: Record<string, unknown>, update = false): boolean {
   const allowedFields = ["nome", "descricao", "finalidade", "enderecoId"];
-  return Object.keys(value).every((key) => allowedFields.includes(key));
+  return Object.keys(value).every((key) => allowedFields.includes(key) || (update && key === "publicado"));
 }
 
 function isValidText(value: unknown, maxLength: number): value is string {
@@ -82,7 +82,7 @@ export function parseCreateProjetoInput(
 export function parseUpdateProjetoInput(
   value: unknown,
 ): ValidationResult<UpdateProjetoDTO> {
-  if (!isRecord(value) || !hasOnlyFields(value)) {
+  if (!isRecord(value) || !hasOnlyFields(value, true)) {
     return invalidFields();
   }
 
@@ -94,6 +94,10 @@ export function parseUpdateProjetoInput(
   }
 
   const data: Partial<UpdateProjetoDTO> = {};
+  if ("publicado" in value) {
+    if (typeof value.publicado !== "boolean") return invalidFields();
+    data.publicado = value.publicado;
+  }
 
   if ("nome" in value) {
     if (!isValidText(value.nome, 45)) {

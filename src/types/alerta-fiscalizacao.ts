@@ -7,10 +7,11 @@ export interface CreateAlertaFiscalizacaoDTO {
   fiscalizacaoId: number;
 }
 
-export type UpdateAlertaFiscalizacaoDTO = Partial<CreateAlertaFiscalizacaoDTO>;
+export type UpdateAlertaFiscalizacaoDTO = Partial<CreateAlertaFiscalizacaoDTO> & { publicado?: boolean };
 
 export interface AlertaFiscalizacaoResponseDTO
   extends CreateAlertaFiscalizacaoDTO {
   id: number;
+  publicado: boolean;
   dataGeracao: string;
 }

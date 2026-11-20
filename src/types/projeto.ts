@@ -6,6 +6,7 @@ export interface CreateProjetoDTO {
 }
 
 export interface UpdateProjetoDTO {
+  publicado?: boolean;
   nome: string;
   descricao: string;
   finalidade: string;
@@ -13,6 +14,7 @@ export interface UpdateProjetoDTO {
 }
 
 export interface ProjetoResponseDTO {
+  publicado: boolean;
   id: number;
   nome: string;
   descricao: string;

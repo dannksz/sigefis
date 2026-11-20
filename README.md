@@ -105,3 +105,38 @@ Omitir `categoria` retorna todos os eventos. Use `page` e `pageSize` para pagina
 | `fiscalizacao` | Designações de fiscais, vistorias, revisões, evidências, alertas e regularizações |
 
 Por exemplo, `GET /api/logs-auditoria?categoria=login&page=1&pageSize=10` retorna os eventos de login e os totais de paginação dessa categoria. Uma categoria vazia, desconhecida ou repetida retorna HTTP `400`.
+
+## API pública de obras
+
+As rotas abaixo aceitam consultas sem autenticação.
+
+| Rota | Resposta |
+|---|---|
+| `GET /api/publico/obras` | Lista de obras ordenada por ID, com `page`, `pageSize`, `total`, `totalPages` e `items`. Uma busca sem resultados retorna HTTP `200` com `items: []`. |
+| `GET /api/publico/obras/{id}` | Uma obra publicada. Retorna HTTP `400` para ID inválido e `404` se a obra não existir ou estiver privada. |
+
+| Parâmetro da lista | Comportamento |
+|---|---|
+| `busca` | Busca por trecho do nome ou da descrição. |
+| `finalidade` | Filtra pelo valor da finalidade. |
+| `cidadeId` | ID inteiro positivo do município associado ao endereço da obra. |
+| `dataInicio`, `dataFim` | Limites opcionais em `YYYY-MM-DD`. A obra entra no resultado se pelo menos uma etapa prevista cruzar o intervalo, incluindo as datas de início e fim. É possível informar só um dos limites. |
+| `status` | Status de uma etapa, por exemplo `EM_EXECUCAO`. Com filtro de período, a mesma etapa precisa atender às duas condições. |
+| `page` | Número da página a partir de 1. Padrão `1`. |
+| `pageSize` | Quantidade de itens de 1 a 100. Padrão `10`. |
+
+Valores inválidos de paginação usam os padrões. Município malformado, data inválida, intervalo invertido ou status vazio ou com mais de 45 caracteres retornam HTTP `400`. Um município ou status válido sem correspondência retorna lista vazia.
+
+Exemplo de consulta:
+
+```http
+GET /api/publico/obras?cidadeId=1&dataInicio=2026-05-01&dataFim=2026-06-30&status=EM_EXECUCAO&page=1&pageSize=10
+```
+
+Cada obra contém `id`, `nome`, `descricao`, `finalidade`, `municipio` (`id`, `nome`, `uf`), `etapas`, `contratos`, `pagamentosAprovados`, `liberacoesAprovadas`, `fiscalizacoes`, `alertas` e `totaisFinanceiros`. As etapas retornam ID, nome, status e datas previstas. As datas públicas usam `YYYY-MM-DD`.
+
+`totaisFinanceiros` tem quatro valores em reais, como strings decimais com duas casas. `alocado` soma os vínculos projeto–verba, `contratado` soma os contratos, `liberado` soma liberações aprovadas e `pago` soma pagamentos aprovados. Os filtros selecionam obras, e a resposta inclui todas as etapas e os totais integrais de cada obra selecionada.
+
+Obras e alertas começam privados. Um `ADMIN` pode enviar `{"publicado":true}` ou `{"publicado":false}` via `PUT /api/projetos/{id}` e `PUT /api/alertas-fiscalizacao/{id}` com JWT. Um alerta só aparece se ele e a obra estiverem publicados. O seed publica explicitamente a obra de demonstração **Revitalização da Praça Central**.
+
+Falhas internas retornam HTTP `500` com um objeto contendo `error`.

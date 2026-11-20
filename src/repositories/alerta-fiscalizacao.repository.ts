@@ -12,6 +12,7 @@ function toResponseDTO(
 ): AlertaFiscalizacaoResponseDTO {
   return {
     id: item.id,
+    publicado: item.publicado,
     tipoAlerta: item.tipoAlerta,
     descricao: item.descricao,
     severidade: item.severidade,

@@ -48,6 +48,9 @@ export async function PUT(request: Request, { params }: Params) {
   }
   const input = parseUpdateAlertaFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
+  if (input.data.publicado !== undefined && request.headers.get("x-auth-role") !== "ADMIN") {
+    return NextResponse.json({ error: "Somente ADMIN pode alterar a publicação do alerta." }, { status: 403 });
+  }
   try {
     const result = await service.update(id, input.data);
     await auditRequestSuccess(request, "ATUALIZAR_ALERTA_FISCALIZACAO", result.id ?? id);

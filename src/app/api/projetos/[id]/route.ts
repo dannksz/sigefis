@@ -78,6 +78,9 @@ export async function PUT(request: Request, { params }: Params) {
   if (!input.success) {
     return NextResponse.json({ error: input.error }, { status: 400 });
   }
+  if (input.data.publicado !== undefined && request.headers.get("x-auth-role") !== "ADMIN") {
+    return NextResponse.json({ error: "Somente ADMIN pode alterar a publicação da obra." }, { status: 403 });
+  }
 
   try {
     const projeto = await projetoService.update(id, input.data);

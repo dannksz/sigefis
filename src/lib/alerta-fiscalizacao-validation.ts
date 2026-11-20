@@ -32,8 +32,8 @@ const allowedFields = [
   "fiscalizacaoId",
 ];
 
-function hasOnlyFields(value: Record<string, unknown>): boolean {
-  return Object.keys(value).every((key) => allowedFields.includes(key));
+function hasOnlyFields(value: Record<string, unknown>, update = false): boolean {
+  return Object.keys(value).every((key) => allowedFields.includes(key) || (update && key === "publicado"));
 }
 
 export function parseCreateAlertaFiscalizacaoInput(
@@ -68,13 +68,17 @@ export function parseCreateAlertaFiscalizacaoInput(
 export function parseUpdateAlertaFiscalizacaoInput(
   value: unknown,
 ): Result<UpdateAlertaFiscalizacaoDTO> {
-  if (!record(value) || !hasOnlyFields(value)) {
+  if (!record(value) || !hasOnlyFields(value, true)) {
     return { success: false, error: "Dados inválidos ou campos não permitidos." };
   }
   if (Object.keys(value).length === 0) {
     return { success: false, error: "Informe ao menos um campo para atualizar." };
   }
   const data: Partial<UpdateAlertaFiscalizacaoDTO> = {};
+  if ("publicado" in value) {
+    if (typeof value.publicado !== "boolean") return { success: false, error: "Publicado deve ser booleano." };
+    data.publicado = value.publicado;
+  }
   const textFields = [
     ["tipoAlerta", 50],
     ["descricao", 65535],

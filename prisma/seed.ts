@@ -116,10 +116,14 @@ async function findOrCreateProjeto(data: {
   descricao: string;
   finalidade: string;
   enderecoId: number;
+  publicado?: boolean;
 }) {
   const existing = await prisma.projeto_obra.findFirst({
-    where: { nome: data.nome },
+    where: { nome: data.nome, enderecoId: data.enderecoId },
   });
+  if (existing && data.publicado && !existing.publicado) {
+    return prisma.projeto_obra.update({ where: { id: existing.id }, data: { publicado: true } });
+  }
   return existing ?? prisma.projeto_obra.create({ data });
 }
 
@@ -257,6 +261,7 @@ async function main() {
     descricao: "Revitalização de pavimentação, iluminação e acessibilidade da praça central.",
     finalidade: "Infraestrutura urbana",
     enderecoId: enderecoObra.id,
+    publicado: true,
   });
   const projetoEscola = await findOrCreateProjeto({
     nome: "Ampliação da Escola Municipal",

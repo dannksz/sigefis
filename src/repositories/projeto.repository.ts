@@ -10,6 +10,7 @@ import type {
 function toResponseDTO(projeto: projeto_obra): ProjetoResponseDTO {
   return {
     id: projeto.id,
+    publicado: projeto.publicado,
     nome: projeto.nome,
     descricao: projeto.descricao,
     finalidade: projeto.finalidade,
@@ -71,6 +72,7 @@ export class ProjetoRepository {
         ...(data.descricao !== undefined && { descricao: data.descricao }),
         ...(data.finalidade !== undefined && { finalidade: data.finalidade }),
         ...(data.enderecoId !== undefined && { enderecoId: data.enderecoId }),
+        publicado: data.publicado,
       },
     });
 

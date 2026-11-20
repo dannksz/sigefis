@@ -117,6 +117,7 @@ model emenda_parlamentar {
 }
 
 model projeto_obra {
+  publicado     Boolean               @default(false)
   id            Int                   @id @default(autoincrement())
   nome          String                @db.VarChar(45)
   descricao     String                @db.VarChar(250)
@@ -323,6 +324,7 @@ model conta_bancaria {
 }
 
 model alerta_fiscalizacao {
+  publicado      Boolean            @default(false)
   id             Int                @id @default(autoincrement())
   tipoAlerta     String             @db.VarChar(50)
   descricao      String             @db.Text
