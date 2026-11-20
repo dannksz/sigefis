@@ -48,8 +48,8 @@ function updateData(
 }
 
 export class LiberacaoRecursoRepository {
-  async create(data: CreateLiberacaoRecursoDTO & { criadoPorUsuarioId: number }) {
-    return response(await prisma.liberacao_recurso.create({ data: createData(data) }));
+  async create(tx: Prisma.TransactionClient, data: CreateLiberacaoRecursoDTO & { criadoPorUsuarioId: number }) {
+    return response(await tx.liberacao_recurso.create({ data: createData(data) }));
   }
   async findAll(query: ListQuery): Promise<PaginatedResult<ReturnType<typeof response>>> {
     const where = {
@@ -64,18 +64,18 @@ export class LiberacaoRecursoRepository {
       map: response,
     });
   }
-  async findById(id: number) {
-    const item = await prisma.liberacao_recurso.findUnique({ where: { id } });
+  async findById(id: number, client: Prisma.TransactionClient = prisma) {
+    const item = await client.liberacao_recurso.findUnique({ where: { id } });
     return item ? response(item) : null;
   }
-  async update(id: number, data: UpdateLiberacaoRecursoDTO) {
-    return response(await prisma.liberacao_recurso.update({ where: { id }, data: updateData(data) }));
+  async update(tx: Prisma.TransactionClient, id: number, data: UpdateLiberacaoRecursoDTO) {
+    return response(await tx.liberacao_recurso.update({ where: { id }, data: updateData(data) }));
   }
   async delete(id: number) {
     await prisma.liberacao_recurso.delete({ where: { id } });
   }
-  async sumByProjetoAndVerba(projetoObraId: number, verbaPublicaId: number, excludeId?: number): Promise<string> {
-    const result = await prisma.liberacao_recurso.aggregate({
+  async sumByProjetoAndVerba(tx: Prisma.TransactionClient, projetoObraId: number, verbaPublicaId: number, excludeId?: number): Promise<string> {
+    const result = await tx.liberacao_recurso.aggregate({
       _sum: { valorLiberacao: true },
       where: {
         verbaPublicaId,

@@ -1,0 +1,137 @@
+<section id="sigefis-journey" aria-label="Jornada de uma obra no SIGEFIS">
+  <style>
+    #sigefis-journey { --gap: calc(var(--font-size-base) * 1.5); color: var(--foreground); }
+    #sigefis-journey .choices { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+    #sigefis-journey .flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); list-style: none; margin: 0; padding: 0; }
+    #sigefis-journey .step { position: relative; min-width: 0; }
+    #sigefis-journey .screen { min-height: 8.75rem; border: 1px solid var(--border); border-radius: .45rem; padding: .55rem; background: var(--background); }
+    #sigefis-journey .chrome { display: flex; align-items: center; gap: .25rem; padding-bottom: .35rem; margin-bottom: .45rem; border-bottom: 1px solid var(--border); }
+    #sigefis-journey .chrome i { width: .3rem; height: .3rem; border-radius: 50%; background: var(--muted-foreground); }
+    #sigefis-journey .heading { display: block; font-weight: 500; margin-bottom: .25rem; }
+    #sigefis-journey .field { display: block; padding-block: .18rem; color: var(--muted-foreground); }
+    #sigefis-journey .cue { display: block; color: var(--foreground); padding-top: .35rem; font-weight: 500; }
+    #sigefis-journey .role { display: block; margin-top: .35rem; }
+    #sigefis-journey .arrow { position: absolute; top: 4rem; left: calc(100% + .2rem); width: calc(var(--gap) - .4rem); height: 1rem; color: var(--muted-foreground); }
+    #sigefis-journey .row-end .arrow { top: auto; bottom: calc(-1 * var(--gap)); left: 50%; transform: rotate(90deg); }
+    #sigefis-journey .flow li:nth-child(4) { grid-column: 3; grid-row: 2; }
+    #sigefis-journey .flow li:nth-child(5) { grid-column: 2; grid-row: 2; }
+    #sigefis-journey .flow li:nth-child(6) { grid-column: 1; grid-row: 2; }
+    #sigefis-journey .reverse .arrow { left: auto; right: calc(100% + .2rem); transform: rotate(180deg); }
+    #sigefis-journey .outcome { margin: 1rem 0 0; }
+    @media (max-width: 580px) {
+      #sigefis-journey .flow { grid-template-columns: 1fr; }
+      #sigefis-journey .flow li:nth-child(n) { grid-column: auto; grid-row: auto; }
+      #sigefis-journey .step { display: grid; grid-template-columns: minmax(8.5rem, 52%) 1fr; align-items: center; gap: .85rem; }
+      #sigefis-journey .screen { min-height: 0; }
+      #sigefis-journey .step .arrow { top: auto; bottom: calc(-1 * var(--gap)); left: 24%; right: auto; transform: rotate(90deg); }
+    }
+  </style>
+  <div class="choices" role="group" aria-label="Cenário da obra">
+    <button class="btn btn-sm" type="button" data-scenario="approved" aria-pressed="true">Fluxo aprovado</button>
+    <button class="btn btn-sm" type="button" data-scenario="contested" aria-pressed="false">Vistoria contestada</button>
+    <button class="btn btn-sm" type="button" data-scenario="blocked" aria-pressed="false">Repasse bloqueado</button>
+  </div>
+  <ol class="flow" aria-label="Telas na ordem de uso">
+    <li class="step">
+      <div class="screen">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="heading">Reforma da UBS</span>
+        <span class="field text-small">Etapa · Instalações elétricas</span>
+        <span class="field text-small">Verba alocada · R$ 100 mil</span>
+        <span class="cue">Designar fiscais</span>
+      </div>
+      <span class="role">Gestor · Cadastro da obra</span>
+      <svg class="arrow" viewBox="0 0 20 12" aria-hidden="true"><path d="M1 6h17m-5-4 5 4-5 4" fill="none" stroke="currentColor"/></svg>
+    </li>
+    <li class="step">
+      <div class="screen">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="heading">Vistoria da etapa</span>
+        <span class="field text-small">Execução observada · 40%</span>
+        <span class="field text-small">Evidência · Foto da instalação</span>
+        <span class="cue">Registrar vistoria</span>
+      </div>
+      <span class="role">Fiscal interno · Vistoria</span>
+      <svg class="arrow" viewBox="0 0 20 12" aria-hidden="true"><path d="M1 6h17m-5-4 5 4-5 4" fill="none" stroke="currentColor"/></svg>
+    </li>
+    <li class="step row-end">
+      <div class="screen">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="heading">Revisar vistoria</span>
+        <span class="field text-small">40% registrado · Foto anexada</span>
+        <span class="cue" data-field="review">Revisão aprovada</span>
+      </div>
+      <span class="role">Fiscal externo · Parecer</span>
+      <svg class="arrow" viewBox="0 0 20 12" aria-hidden="true"><path d="M1 6h17m-5-4 5 4-5 4" fill="none" stroke="currentColor"/></svg>
+    </li>
+    <li class="step reverse">
+      <div class="screen">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="heading">Solicitar liberação</span>
+        <span class="field text-small">Instalações elétricas</span>
+        <span class="field text-small">Valor solicitado · R$ 30 mil</span>
+        <span class="cue">Enviar para aprovação</span>
+      </div>
+      <span class="role">Gestor · Liberação</span>
+      <svg class="arrow" viewBox="0 0 20 12" aria-hidden="true"><path d="M1 6h17m-5-4 5 4-5 4" fill="none" stroke="currentColor"/></svg>
+    </li>
+    <li class="step reverse">
+      <div class="screen">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="heading">Decisão financeira</span>
+        <span class="field text-small" data-field="release">Liberação · R$ 30 mil aprovados</span>
+        <span class="field text-small" data-field="payment">Pagamento · R$ 20 mil aprovados</span>
+        <span class="cue" data-field="decision">Decisões registradas</span>
+      </div>
+      <span class="role">Administrador · Aprovação</span>
+      <svg class="arrow" viewBox="0 0 20 12" aria-hidden="true"><path d="M1 6h17m-5-4 5 4-5 4" fill="none" stroke="currentColor"/></svg>
+    </li>
+    <li class="step">
+      <div class="screen">
+        <div class="chrome" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="heading">Reforma da UBS</span>
+        <span class="field text-small" data-field="inspection">Vistoria · 40%, aprovada</span>
+        <span class="field text-small" data-field="publicRelease">Liberação aprovada · R$ 30 mil</span>
+        <span class="field text-small" data-field="publicPayment">Pagamento aprovado · R$ 20 mil</span>
+      </div>
+      <span class="role">Cidadão · Detalhe público</span>
+    </li>
+  </ol>
+  <p class="outcome" aria-live="polite" data-field="outcome">O gestor registra a nota fiscal após a liberação. O administrador decide o pagamento em uma segunda operação.</p>
+  <script>
+    (() => {
+      const root = document.getElementById("sigefis-journey");
+      const buttons = [...root.querySelectorAll("[data-scenario]")];
+      const fields = [...root.querySelectorAll("[data-field]")];
+      const approved = Object.fromEntries(fields.map(el => [el.dataset.field, el.textContent]));
+      const scenarios = {
+        approved,
+        contested: {
+          review: "Revisão contestada",
+          release: "Liberação · Pendente",
+          payment: "Pagamento · Aguardando revisão",
+          decision: "Aprovação impedida",
+          inspection: "Vistoria · 40%, contestada",
+          publicRelease: "Nenhuma liberação aprovada",
+          publicPayment: "Nenhum pagamento aprovado",
+          outcome: "A liberação continua pendente. A contestação impede a aprovação enquanto a etapa não tiver uma revisão vigente aprovada."
+        },
+        blocked: {
+          review: "Revisão aprovada",
+          release: "Liberação · Pendente",
+          payment: "Pagamento · Aguardando recurso",
+          decision: "Bloqueio de repasse vigente",
+          inspection: "Vistoria · 40%, aprovada",
+          publicRelease: "Nenhuma liberação aprovada",
+          publicPayment: "Nenhum pagamento aprovado",
+          outcome: "Um bloqueio registrado na obra impede esta liberação. Sem recurso aprovado para a etapa neste exemplo, o gestor ainda não pode cadastrar o pagamento."
+        }
+      };
+      buttons.forEach(button => button.addEventListener("click", () => {
+        const scenario = scenarios[button.dataset.scenario];
+        fields.forEach(el => { el.textContent = scenario[el.dataset.field]; });
+        buttons.forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+      }));
+    })();
+  </script>
+</section>

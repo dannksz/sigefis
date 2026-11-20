@@ -8,6 +8,8 @@ import type {
   UpdatePagamentoDTO,
 } from "@/types/pagamento";
 
+const statusQueConsomemSaldo = ["PENDENTE", "APROVADA"];
+
 function cents(value: string): bigint {
   const [integer, decimal = ""] = value.split(".");
   return BigInt(integer) * BigInt("100") + BigInt(decimal.padEnd(2, "0"));
@@ -32,6 +34,7 @@ export class PagamentoService {
   ): Promise<PagamentoResponseDTO> {
     return prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM contrato WHERE id = ${data.contratoId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM etapa_cronograma WHERE id = ${data.etapaCronogramaId} FOR UPDATE`;
       const contrato = await tx.contrato.findUnique({ where: { id: data.contratoId } });
       if (!contrato) throw new Error("Contrato não encontrado.");
       const etapa = await tx.etapa_cronograma.findUnique({ where: { id: data.etapaCronogramaId } });
@@ -46,12 +49,13 @@ export class PagamentoService {
       if (duplicate) throw new Error("A nota fiscal já está cadastrada.");
       const paid = await tx.pagamento.aggregate({
         _sum: { valorPagamento: true },
-        where: { contratoId: data.contratoId },
+        where: { contratoId: data.contratoId, status: { in: statusQueConsomemSaldo } },
       });
       const paidForStage = await tx.pagamento.aggregate({
         _sum: { valorPagamento: true },
         where: {
           etapaCronogramaId: data.etapaCronogramaId,
+          status: { in: statusQueConsomemSaldo },
           contrato: { verbaPublicaId: contrato.verbaPublicaId },
         },
       });
@@ -82,7 +86,7 @@ export class PagamentoService {
         "O pagamento excede o recurso liberado para a etapa.",
       );
       return this.repository.createWithClient(tx, { ...data, criadoPorUsuarioId });
-    });
+    }, { isolationLevel: "ReadCommitted" });
   }
 
   async findAll(query: ListQuery) {
@@ -97,6 +101,7 @@ export class PagamentoService {
 
   async update(id: number, data: UpdatePagamentoDTO): Promise<PagamentoResponseDTO> {
     return prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM pagamento WHERE id = ${id} FOR UPDATE`;
       const current = await tx.pagamento.findUnique({ where: { id } });
       if (!current) throw new Error("Pagamento não encontrado.");
       if (current.status !== "PENDENTE") {
@@ -107,6 +112,7 @@ export class PagamentoService {
       const numeroNotaFiscal = data.numeroNotaFiscal ?? current.numeroNotaFiscal;
       const valorPagamento = data.valorPagamento ?? current.valorPagamento.toString();
       await tx.$queryRaw`SELECT id FROM contrato WHERE id = ${contratoId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM etapa_cronograma WHERE id = ${etapaCronogramaId} FOR UPDATE`;
       const contrato = await tx.contrato.findUnique({ where: { id: contratoId } });
       if (!contrato) throw new Error("Contrato não encontrado.");
       const etapa = await tx.etapa_cronograma.findUnique({ where: { id: etapaCronogramaId } });
@@ -123,13 +129,14 @@ export class PagamentoService {
       }
       const paid = await tx.pagamento.aggregate({
         _sum: { valorPagamento: true },
-        where: { contratoId, id: { not: id } },
+        where: { contratoId, id: { not: id }, status: { in: statusQueConsomemSaldo } },
       });
       const paidForStage = await tx.pagamento.aggregate({
         _sum: { valorPagamento: true },
         where: {
           etapaCronogramaId,
           id: { not: id },
+          status: { in: statusQueConsomemSaldo },
           contrato: { verbaPublicaId: contrato.verbaPublicaId },
         },
       });
@@ -160,7 +167,7 @@ export class PagamentoService {
         "O pagamento excede o recurso liberado para a etapa.",
       );
       return this.repository.updateWithClient(tx, id, data);
-    });
+    }, { isolationLevel: "ReadCommitted" });
   }
 
   async delete(id: number): Promise<void> {
