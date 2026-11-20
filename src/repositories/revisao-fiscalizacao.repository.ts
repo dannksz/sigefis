@@ -7,6 +7,11 @@ import type {
   UpdateRevisaoFiscalizacaoDTO,
 } from "@/types/revisao-fiscalizacao";
 
+const ordemVigencia: Prisma.revisao_fiscalizacaoOrderByWithRelationInput[] = [
+  { dataRevisao: "desc" },
+  { id: "desc" },
+];
+
 function toResponseDTO(
   item: revisao_fiscalizacao,
 ): RevisaoFiscalizacaoResponseDTO {
@@ -23,9 +28,10 @@ function toResponseDTO(
 export class RevisaoFiscalizacaoRepository {
   async create(
     data: CreateRevisaoFiscalizacaoDTO,
+    tx: Prisma.TransactionClient,
   ): Promise<RevisaoFiscalizacaoResponseDTO> {
     return toResponseDTO(
-      await prisma.revisao_fiscalizacao.create({
+      await tx.revisao_fiscalizacao.create({
         data: data as Prisma.revisao_fiscalizacaoUncheckedCreateInput,
       }),
     );
@@ -56,7 +62,7 @@ export class RevisaoFiscalizacaoRepository {
       count: () => prisma.revisao_fiscalizacao.count({ where: { fiscalizacaoId } }),
       findMany: ({ skip, take }) => prisma.revisao_fiscalizacao.findMany({
         where: { fiscalizacaoId },
-        orderBy: { dataRevisao: "desc" },
+        orderBy: ordemVigencia,
         skip,
         take,
       }),
@@ -66,15 +72,41 @@ export class RevisaoFiscalizacaoRepository {
   async update(
     id: number,
     data: UpdateRevisaoFiscalizacaoDTO,
+    tx: Prisma.TransactionClient,
   ): Promise<RevisaoFiscalizacaoResponseDTO> {
     return toResponseDTO(
-      await prisma.revisao_fiscalizacao.update({
+      await tx.revisao_fiscalizacao.update({
         where: { id },
         data: data as Prisma.revisao_fiscalizacaoUncheckedUpdateInput,
       }),
     );
   }
-  async delete(id: number): Promise<void> {
-    await prisma.revisao_fiscalizacao.delete({ where: { id } });
+  async delete(id: number, tx: Prisma.TransactionClient): Promise<void> {
+    await tx.revisao_fiscalizacao.delete({ where: { id } });
+  }
+
+  async sincronizarVistoria(fiscalizacaoId: number, tx: Prisma.TransactionClient): Promise<void> {
+    const vigente = await tx.revisao_fiscalizacao.findFirst({
+      where: { fiscalizacaoId },
+      orderBy: ordemVigencia,
+      select: { statusRevisao: true },
+    });
+    const status = vigente?.statusRevisao ?? "PENDENTE";
+    await tx.fiscalizacao.update({
+      where: { id: fiscalizacaoId },
+      data: { statusVistoria: status === "PENDENTE" ? "PENDENTE_REVISAO" : status },
+    });
+  }
+
+  async etapaTemRevisaoAprovada(
+    etapaCronogramaId: number,
+    projetoObraId: number,
+    tx: Prisma.TransactionClient,
+  ): Promise<boolean> {
+    const vistorias = await tx.fiscalizacao.findMany({
+      where: { etapaCronogramaId, projetoObraId, revisoes: { some: { statusRevisao: "APROVADA" } } },
+      select: { revisoes: { orderBy: ordemVigencia, take: 1, select: { statusRevisao: true } } },
+    });
+    return vistorias.some(({ revisoes }) => revisoes[0]?.statusRevisao === "APROVADA");
   }
 }

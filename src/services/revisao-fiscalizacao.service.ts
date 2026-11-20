@@ -1,4 +1,5 @@
 import type { ListQuery } from "@/lib/pagination";
+import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { FiscalizacaoRepository } from "@/repositories/fiscalizacao.repository";
 import { RevisaoFiscalizacaoRepository } from "@/repositories/revisao-fiscalizacao.repository";
@@ -15,6 +16,18 @@ export class RevisaoFiscalizacaoService {
   private repository = new RevisaoFiscalizacaoRepository();
   private fiscalizacaoRepository = new FiscalizacaoRepository();
   private userRepository = new UserRepository();
+
+  private async salvarRevisao<T>(
+    fiscalizacaoId: number,
+    alterar: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    return prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM fiscalizacao WHERE id = ${fiscalizacaoId} FOR UPDATE`;
+      const result = await alterar(tx);
+      await this.repository.sincronizarVistoria(fiscalizacaoId, tx);
+      return result;
+    });
+  }
 
   async create(
     data: CreateRevisaoFiscalizacaoDTO,
@@ -41,28 +54,7 @@ export class RevisaoFiscalizacaoService {
     if (!designacao) {
       throw new Error("O fiscal externo não está designado para esta obra.");
     }
-    const result = await prisma.$transaction(async (tx) => {
-      const revision = await tx.revisao_fiscalizacao.create({
-        data,
-      });
-      const statusVistoria =
-        data.statusRevisao === "APROVADA"
-          ? "APROVADA"
-          : data.statusRevisao === "CONTESTADA"
-            ? "CONTESTADA"
-            : data.statusRevisao === "CORRECAO_SOLICITADA"
-              ? "CORRECAO_SOLICITADA"
-              : "PENDENTE_REVISAO";
-      await tx.fiscalizacao.update({
-        where: { id: data.fiscalizacaoId },
-        data: { statusVistoria },
-      });
-      return revision;
-    });
-    return this.repository.findById(result.id).then((item) => {
-      if (!item) throw new Error("Revisão de fiscalização não encontrada.");
-      return item;
-    });
+    return this.salvarRevisao(data.fiscalizacaoId, (tx) => this.repository.create(data, tx));
   }
 
   async findAll(query: ListQuery) {
@@ -82,12 +74,12 @@ export class RevisaoFiscalizacaoService {
   ): Promise<RevisaoFiscalizacaoResponseDTO> {
     const current = await this.findById(id);
     if (current.fiscalExternoId !== usuarioId) throw new Error(REVISAO_OUTRO_AUTOR);
-    return this.repository.update(id, data);
+    return this.salvarRevisao(current.fiscalizacaoId, (tx) => this.repository.update(id, data, tx));
   }
 
   async delete(id: number): Promise<void> {
-    await this.findById(id);
-    return this.repository.delete(id);
+    const current = await this.findById(id);
+    return this.salvarRevisao(current.fiscalizacaoId, (tx) => this.repository.delete(id, tx));
   }
 
   findByFiscalizacao(

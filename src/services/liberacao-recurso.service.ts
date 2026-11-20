@@ -1,5 +1,6 @@
 import type { ListQuery } from "@/lib/pagination";
 import prisma from "@/lib/prisma";
+import { RevisaoFiscalizacaoRepository } from "@/repositories/revisao-fiscalizacao.repository";
 import { EtapaCronogramaRepository } from "@/repositories/etapa-cronograma.repository";
 import { LiberacaoRecursoRepository } from "@/repositories/liberacao-recurso.repository";
 import { VerbaPublicaRepository } from "@/repositories/verba-publica.repository";
@@ -22,6 +23,7 @@ function money(value: bigint): string {
 }
 
 export class LiberacaoRecursoService {
+  private revisoes = new RevisaoFiscalizacaoRepository();
   private repository = new LiberacaoRecursoRepository();
   private etapaRepository = new EtapaCronogramaRepository();
   private verbaRepository = new VerbaPublicaRepository();
@@ -69,20 +71,13 @@ export class LiberacaoRecursoService {
       select: { projetoObraId: true },
     });
     if (!etapa) throw new Error("Etapa do cronograma não encontrada.");
-    const approvedInspection = await prisma.revisao_fiscalizacao.findFirst({
-      where: {
-        statusRevisao: "APROVADA",
-        fiscalizacao: {
-          etapaCronogramaId: current.etapaCronogramaId,
-          projetoObraId: etapa.projetoObraId,
-        },
-      },
-      select: { id: true },
-    });
-    if (!approvedInspection) {
-      throw new Error("A liberação exige fiscalização revisada externamente.");
-    }
     await prisma.$transaction(async (tx) => {
+      const approvedInspection = await this.revisoes.etapaTemRevisaoAprovada(
+        current.etapaCronogramaId, etapa.projetoObraId, tx,
+      );
+      if (!approvedInspection) {
+        throw new Error("A liberação exige fiscalização revisada externamente.");
+      }
       const updated = await tx.liberacao_recurso.updateMany({
         where: { id, status: "PENDENTE" },
         data: {
