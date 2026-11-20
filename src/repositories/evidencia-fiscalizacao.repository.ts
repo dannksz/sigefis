@@ -62,6 +62,13 @@ export class EvidenciaFiscalizacaoRepository {
     return item ? toResponseDTO(item) : null;
   }
 
+  async findByFileUrl(url: string): Promise<EvidenciaFiscalizacaoResponseDTO | null> {
+    const item = await prisma.evidencia_fiscalizacao.findFirst({
+      where: { caminhoArquivo: url },
+    });
+    return item ? toResponseDTO(item) : null;
+  }
+
   async update(
     id: number,
     data: UpdateEvidenciaFiscalizacaoDTO,

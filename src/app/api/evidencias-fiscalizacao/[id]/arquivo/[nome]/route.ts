@@ -23,7 +23,8 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   try {
-    const evidence = await service.findById(id);
+    const url = `/api/evidencias-fiscalizacao/${id}/arquivo/${nome}`;
+    const evidence = await service.findByFileUrl(url, id);
     const filePath = getEvidenceFilePath(evidence.caminhoArquivo);
     if (path.basename(filePath) !== nome) {
       return NextResponse.json({ error: "Arquivo de evidência não encontrado." }, { status: 404 });

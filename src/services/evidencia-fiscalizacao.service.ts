@@ -34,6 +34,10 @@ export class EvidenciaFiscalizacaoService {
     return item;
   }
 
+  async findByFileUrl(url: string, id: number): Promise<EvidenciaFiscalizacaoResponseDTO> {
+    return (await this.repository.findByFileUrl(url)) ?? this.findById(id);
+  }
+
   async update(
     id: number,
     data: UpdateEvidenciaFiscalizacaoDTO,

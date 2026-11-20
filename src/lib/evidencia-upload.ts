@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import prisma from "@/lib/prisma";
 
 export const MAX_EVIDENCE_FILE_SIZE = 10 * 1024 * 1024;
+const ORPHAN_MINIMUM_AGE_MS = 60 * 60 * 1000;
 const EVIDENCE_STORAGE_ROOT = path.resolve(
   process.cwd(),
   "storage",
@@ -108,7 +109,7 @@ export async function saveEvidenceFile(
   fiscalizacaoId: number,
   file: File,
 ): Promise<string> {
-  if (!ALLOWED_EVIDENCE_TYPES[file.type]) {
+  if (!Object.hasOwn(ALLOWED_EVIDENCE_TYPES, file.type)) {
     throw new Error("Tipo de arquivo não permitido.");
   }
   if (file.size <= 0) {
@@ -144,6 +145,8 @@ export async function deleteEvidenceFile(caminhoArquivo: string): Promise<void> 
 }
 
 export async function cleanupOrphanEvidenceFiles(): Promise<number> {
+  // Preserve uploads that may still be waiting for their database record.
+  const cutoff = Date.now() - ORPHAN_MINIMUM_AGE_MS;
   const referencedPaths = new Set(
     (
       await prisma.evidencia_fiscalizacao.findMany({
@@ -183,9 +186,15 @@ export async function cleanupOrphanEvidenceFiles(): Promise<number> {
         directory.name,
         file.name,
       );
-      if (!referencedPaths.has(filePath)) {
+      if (referencedPaths.has(filePath)) continue;
+      try {
+        if ((await stat(filePath)).mtimeMs > cutoff) continue;
         await unlink(filePath);
         removed += 1;
+      } catch (error: unknown) {
+        if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) {
+          throw error;
+        }
       }
     }
   }
