@@ -1,3 +1,12 @@
+export const logAuditoriaCategorias = [
+  "login",
+  "obras",
+  "financeiro",
+  "fiscalizacao",
+] as const;
+
+export type LogAuditoriaCategoria = (typeof logAuditoriaCategorias)[number];
+
 export interface CreateLogAuditoriaDTO {
   acao: string;
   tabelaAfetada: string;
@@ -14,7 +23,8 @@ export type CreateLogAuditoriaInputDTO = Omit<
 
 export type UpdateLogAuditoriaDTO = Partial<CreateLogAuditoriaDTO>;
 
-export interface LogAuditoriaResponseDTO extends CreateLogAuditoriaDTO {
+export interface LogAuditoriaResponseDTO extends Omit<CreateLogAuditoriaDTO, "usuarioId"> {
   id: number;
   dataHora: string;
+  usuarioId: number | null;
 }

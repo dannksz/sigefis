@@ -91,3 +91,17 @@ Exemplo de corpo para `POST /api/users`:
 `cpf` deve conter 11 dígitos; `cnpj`, se informado, deve conter 14 dígitos. `dataNascimento` (formato ISO 8601) e `enderecoId` são opcionais. A senha deve conter ao menos 8 caracteres e no máximo 72 bytes. O campo `senha` é armazenado com hash e nunca é incluído nas respostas.
 
 Execute `npm test` para validar as regras de autenticação e os payloads de usuários.
+
+## Listagem de auditoria
+
+`GET /api/logs-auditoria` exige um JWT de `ADMIN` no cabeçalho `Authorization: Bearer <token>`.
+Omitir `categoria` retorna todos os eventos. Use `page` e `pageSize` para paginar os resultados.
+
+| Categoria | Eventos |
+|---|---|
+| `login` | Logins bem-sucedidos e malsucedidos |
+| `obras` | Projetos, etapas do cronograma e vínculos entre projetos e verbas |
+| `financeiro` | Verbas, emendas, contratos, contas bancárias, liberações, pagamentos, decisões e bloqueios de repasse |
+| `fiscalizacao` | Designações de fiscais, vistorias, revisões, evidências, alertas e regularizações |
+
+Por exemplo, `GET /api/logs-auditoria?categoria=login&page=1&pageSize=10` retorna os eventos de login e os totais de paginação dessa categoria. Uma categoria vazia, desconhecida ou repetida retorna HTTP `400`.

@@ -87,3 +87,20 @@ export async function auditRequestSuccess(
     console.error(`Erro ao auditar ${acao}:`, error),
   );
 }
+
+export async function auditFailedLogin(ipOrigem: string): Promise<void> {
+  await prisma.log_auditoria.create({
+    data: {
+      acao: "LOGIN_FALHOU",
+      tabelaAfetada: "usuario",
+      registroId: 0,
+      detalhes: JSON.stringify({
+        status: "failure",
+        motivo: "credenciais_invalidas",
+        rota: "/api/auth/login",
+      }),
+      ipOrigem,
+      usuarioId: null,
+    },
+  });
+}

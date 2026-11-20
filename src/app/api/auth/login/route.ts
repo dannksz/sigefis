@@ -1,8 +1,9 @@
+import { isIP } from "node:net";
 import { NextResponse } from "next/server";
 import { UserService } from "@/services/user.service";
 import { getJwtSecret, signAccessToken } from "@/lib/auth-policy";
 import { parseLoginInput } from "@/lib/user-validation";
-import { auditSuccess } from "@/lib/audit-request";
+import { auditFailedLogin, auditSuccess } from "@/lib/audit-request";
 
 const userService = new UserService();
 
@@ -36,8 +37,14 @@ export async function POST(request: Request) {
     }
 
     const user = await userService.authenticate(credentials.data);
+    const forwardedIp = request.headers.get("x-forwarded-for")?.split(",")[0].trim();
+    const realIp = request.headers.get("x-real-ip")?.trim();
+    const ipOrigem = [forwardedIp, realIp].find((ip) => ip && isIP(ip)) ?? "unknown";
 
     if (!user) {
+      await auditFailedLogin(ipOrigem).catch((error: unknown) => {
+        console.error("Erro ao registrar auditoria de login malsucedido:", error);
+      });
       return NextResponse.json(
         { error: "Credenciais inválidas." },
         { status: 401 },
@@ -52,10 +59,7 @@ export async function POST(request: Request) {
       acao: "LOGIN",
       pathname: "/api/auth/login",
       usuarioId: user.id,
-      ipOrigem:
-        request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-        request.headers.get("x-real-ip") ||
-        "unknown",
+      ipOrigem,
       registroId: user.id,
       detalhes: { role: user.role },
     }).catch((error: unknown) => {
