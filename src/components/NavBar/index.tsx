@@ -1,7 +1,8 @@
-import { Search, UserRound } from "lucide-react";
+import { Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import PortalDialog from "@/components/PortalDialog";
+import AuthMenu from "@/components/AuthMenu";
 
 export default function Navbar() {
   return (
@@ -27,11 +28,7 @@ export default function Navbar() {
             <Link href="/#busca" aria-label="Ir para a busca" className="portal-search-shortcut">
               <Search size={24} strokeWidth={2.3} aria-hidden="true" />
             </Link>
-            <PortalDialog label="Entrar" title="Acesso à área interna" className="portal-account"
-              trigger={<UserRound size={19} fill="currentColor" strokeWidth={2.3} aria-hidden="true" />}
-            >
-              <p>A área de acesso está em desenvolvimento. Você já pode consultar as obras publicadas.</p>
-            </PortalDialog>
+            <AuthMenu />
           </div>
         </nav>
       </div>
