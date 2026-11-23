@@ -1,21 +1,13 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/NavBar";
-import AccessibilityWidget from "@/components/AccessibilityWidget";
+import "./portal.css";
 
-type MainTemplatetProps = {
-    children: React.ReactNode;
-}
-
-
-export default function MainTemplate({children}: Readonly<MainTemplatetProps>){
-    return (
-        <div className="min-h-screen flex flex-col">
-            <Navbar/>
-            <main className="flex-1">
-                {children}
-            </main>
-            <Footer />
-            <AccessibilityWidget />
-        </div>
-    )
+export default function MainTemplate({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <Navbar />
+      <main id="conteudo" className="flex-1">{children}</main>
+      <Footer />
+    </div>
+  );
 }

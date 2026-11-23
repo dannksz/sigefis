@@ -1,68 +1,40 @@
-'use client';
-import { Search, ShoppingCart, User, LogOut } from "lucide-react";
-import Link from "next/link"
+import { Search, UserRound } from "lucide-react";
 import Image from "next/image";
-import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
+import PortalDialog from "@/components/PortalDialog";
 
 export default function Navbar() {
-  const { data: session } = useSession();
-
   return (
-    <nav className="w-full bg-primary text-white py-3 shadow-md">
-      <div className="max-w-8xl mx-auto px-4 flex items-center justify-between">
-        <div className="flex items-center">
-          <Link href="/">
-            <div className="w-32 md:w-40 h-8 md:h-10 flex items-center">
-                <Image
-                  src="/images/logomarca.png"
-                  alt="Logomarca"
-                  width={160}
-                  height={40}
-                  className="w-full h-full object-contain"
-                />
-            </div>
-          </Link>
-        </div>
-
-        <ul className="hidden md:flex items-center gap-7 font-light text-sm">
-          <Link className="hover:text-secondary cursor-pointer transition duration-500" href="/produtos">PRODUTOS</Link>
-          <Link className="hover:text-secondary cursor-pointer transition duration-500" href="/about">SOBRE</Link>
-          <Link className="hover:text-secondary cursor-pointer transition duration-500" href="/contact">CONTATO</Link>
-          <Link className="hover:text-secondary cursor-pointer transition duration-500" href="/suporte">SUPORTE</Link>
-          {session?.user?.role === 'admin' && (
-            <Link className="hover:text-secondary cursor-pointer transition duration-500" href="/adm">ADMIN</Link>
-          )}
-        </ul>
-
-        <div className="flex items-center gap-2 md:gap-4">
-          <Link href="/carrinho">
-            <ShoppingCart className="w-5 h-5 cursor-pointer hover:text-secondary transition duration-500" />
-          </Link>
-          
-          {session ? (
-            <div className="flex items-center gap-2">
-              <Link href="/perfil">
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-500">
-                  <User className="w-4 h-4 text-secondary" />
-                </div>
-              </Link>
-              <button 
-                onClick={() => signOut()}
-                className="hover:text-secondary cursor-pointer transition duration-500"
-                title="Sair"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          ) : (
-            <Link href="/login">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-500">
-                <User className="w-4 h-4 text-secondary" />
-              </div>
+    <header className="portal-header">
+      <div className="portal-header-inner">
+        <Link href="/" className="portal-logo" aria-label="SIGEFIS, página inicial">
+          <Image src="/images/logomarca.png" alt="SIGEFIS" width={780} height={126} unoptimized />
+        </Link>
+        <nav className="portal-nav" aria-label="Navegação principal">
+          <ul className="portal-nav-links">
+            <li><Link href="/#consultas">Obras</Link></li>
+            <li><PortalDialog label="Sobre" title="Sobre o SIGEFIS">
+              <p>O SIGEFIS reúne dados sobre obras, contratos, fiscalizações e uso de recursos públicos.</p>
+            </PortalDialog></li>
+            <li><PortalDialog label="Contato" title="Contato">
+              <p>O canal de contato do SIGEFIS será divulgado nesta seção.</p>
+            </PortalDialog></li>
+            <li><PortalDialog label="Suporte" title="Suporte">
+              <p>Pesquise pelo nome da obra, pela localização ou pelo assunto. A consulta pública dispensa uma conta.</p>
+            </PortalDialog></li>
+          </ul>
+          <div className="portal-nav-actions">
+            <Link href="/#busca" aria-label="Ir para a busca" className="portal-search-shortcut">
+              <Search size={24} strokeWidth={2.3} aria-hidden="true" />
             </Link>
-          )}
-        </div>
+            <PortalDialog label="Entrar" title="Acesso à área interna" className="portal-account"
+              trigger={<UserRound size={19} fill="currentColor" strokeWidth={2.3} aria-hidden="true" />}
+            >
+              <p>A área de acesso está em desenvolvimento. Você já pode consultar as obras publicadas.</p>
+            </PortalDialog>
+          </div>
+        </nav>
       </div>
-    </nav>
+    </header>
   );
 }

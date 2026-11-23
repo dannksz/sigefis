@@ -30,5 +30,14 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/components/AccessibilityWidget",
+    "src/components/AdminProtection.tsx",
+    "src/components/BestSellers",
+    "src/components/CookieExample",
+    "src/components/ReviewForm",
+    "src/components/ReviewSection",
+    "src/components/Toast"
+  ]
 }
