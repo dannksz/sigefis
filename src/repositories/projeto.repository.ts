@@ -10,6 +10,7 @@ import type {
 function toResponseDTO(projeto: projeto_obra): ProjetoResponseDTO {
   return {
     id: projeto.id,
+    dataConclusao: projeto.dataConclusao?.toISOString().slice(0, 10) ?? null,
     publicado: projeto.publicado,
     nome: projeto.nome,
     descricao: projeto.descricao,
@@ -26,6 +27,7 @@ export class ProjetoRepository {
         descricao: data.descricao,
         finalidade: data.finalidade,
         enderecoId: data.enderecoId,
+        dataConclusao: data.dataConclusao ? new Date(`${data.dataConclusao}T00:00:00.000Z`) : null,
       },
     });
 
@@ -73,6 +75,9 @@ export class ProjetoRepository {
         ...(data.finalidade !== undefined && { finalidade: data.finalidade }),
         ...(data.enderecoId !== undefined && { enderecoId: data.enderecoId }),
         publicado: data.publicado,
+        ...(data.dataConclusao !== undefined && {
+          dataConclusao: data.dataConclusao === null ? null : new Date(`${data.dataConclusao}T00:00:00.000Z`),
+        }),
       },
     });
 

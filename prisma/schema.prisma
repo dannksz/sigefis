@@ -117,6 +117,7 @@ model emenda_parlamentar {
 }
 
 model projeto_obra {
+  dataConclusao DateTime?             @db.Date
   publicado     Boolean               @default(false)
   id            Int                   @id @default(autoincrement())
   nome          String                @db.VarChar(45)

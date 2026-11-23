@@ -7,12 +7,12 @@ export default function Home() {
     <MainTemplate>
       <div className="portal-home">
         <section className="portal-intro" aria-labelledby="portal-heading">
-          <div role="search" className="portal-search">
-            <button type="button" aria-label="Pesquisar" disabled><Search size={23} strokeWidth={2.3} aria-hidden="true" /></button>
+          <form role="search" action="/obras" className="portal-search">
+            <button type="submit" aria-label="Pesquisar"><Search size={23} strokeWidth={2.3} aria-hidden="true" /></button>
             <label className="sr-only" htmlFor="busca">Pesquisar obras públicas</label>
             <input id="busca" name="busca" type="search" maxLength={120}
               placeholder="Pesquise por uma obra, um estado, uma cidade ou um tópico" />
-          </div>
+          </form>
           <h1 id="portal-heading">Encontre as principais informações sobre as obras públicas centralizadas em um só lugar</h1>
           <p>Com o SIGEFIS, a informação está na palma da sua mão</p>
         </section>
@@ -25,9 +25,11 @@ export default function Home() {
               </ConsultationButton>
             </li>
             <li>
-              <ConsultationButton aria-disabled="true">
+              <form action="/obras">
+              <ConsultationButton type="submit">
                 <TriangleAlert size={18} aria-hidden="true" /> Obras
               </ConsultationButton>
+              </form>
             </li>
             <li>
               <ConsultationButton aria-disabled="true">

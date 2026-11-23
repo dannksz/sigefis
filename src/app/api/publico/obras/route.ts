@@ -9,24 +9,49 @@ function parseDate(value: string | null): Date | undefined {
   if (!Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value) return date;
 }
 
+function parseId(value: string | null): number | undefined {
+  if (value && /^[1-9]\d*$/.test(value) && Number(value) <= 2147483647) return Number(value);
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cidadeParam = searchParams.get("cidadeId");
-  const cidadeId = cidadeParam === null ? undefined : Number(cidadeParam);
+  const estadoParam = searchParams.get("estadoId");
+  const cidadeId = parseId(cidadeParam);
+  const estadoId = parseId(estadoParam);
+  const regiao = searchParams.get("regiao")?.trim();
   const inicioParam = searchParams.get("dataInicio");
   const fimParam = searchParams.get("dataFim");
   const dataInicio = parseDate(inicioParam);
   const dataFim = parseDate(fimParam);
+  const conclusaoInicioParam = searchParams.get("conclusaoInicio");
+  const conclusaoFimParam = searchParams.get("conclusaoFim");
+  const conclusaoInicio = parseDate(conclusaoInicioParam);
+  const conclusaoFim = parseDate(conclusaoFimParam);
+  const entregaInicioParam = searchParams.get("entregaInicio");
+  const entregaFimParam = searchParams.get("entregaFim");
+  const entregaInicio = parseDate(entregaInicioParam);
+  const entregaFim = parseDate(entregaFimParam);
   const status = searchParams.get("status")?.trim();
+  const ordemParam = searchParams.get("ordem");
   if (
-    (cidadeParam !== null && (!/^[1-9]\d*$/.test(cidadeParam) || Number(cidadeId) > 2147483647)) ||
+    (cidadeParam !== null && !cidadeId) ||
+    (estadoParam !== null && !estadoId) ||
+    (regiao !== undefined && (!regiao || regiao.length > 45)) ||
     (inicioParam !== null && !dataInicio) ||
     (fimParam !== null && !dataFim) ||
     (dataInicio && dataFim && dataInicio > dataFim) ||
-    (status !== undefined && (!status || status.length > 45))
+    (conclusaoInicioParam !== null && !conclusaoInicio) ||
+    (conclusaoFimParam !== null && !conclusaoFim) ||
+    (conclusaoInicio && conclusaoFim && conclusaoInicio > conclusaoFim) ||
+    (entregaInicioParam !== null && !entregaInicio) ||
+    (entregaFimParam !== null && !entregaFim) ||
+    (entregaInicio && entregaFim && entregaInicio > entregaFim) ||
+    (status !== undefined && (!status || status.length > 45)) ||
+    (ordemParam !== null && ordemParam !== "antiga" && ordemParam !== "recente")
   ) {
     return NextResponse.json(
-      { error: "Informe município, período e status válidos." },
+      { error: "Informe localização, datas e status válidos." },
       { status: 400 },
     );
   }
@@ -46,10 +71,18 @@ export async function GET(request: Request) {
     const result = await service.findAll({
       busca,
       finalidade,
+      regiao,
+      estadoId,
       cidadeId,
       dataInicio,
       dataFim,
+      conclusaoInicio,
+      conclusaoFim,
+      entregaInicio,
+      entregaFim,
       status,
+      ordem: ordemParam === "recente" ? "recente" : "antiga",
+      buscaDetalhada: true,
       page,
       pageSize,
     });

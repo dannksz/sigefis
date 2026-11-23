@@ -4,10 +4,18 @@ import prisma from "@/lib/prisma";
 export interface TransparenciaFilters {
   busca?: string;
   finalidade?: string;
+  regiao?: string;
+  estadoId?: number;
   cidadeId?: number;
   dataInicio?: Date;
   dataFim?: Date;
+  conclusaoInicio?: Date;
+  conclusaoFim?: Date;
+  entregaInicio?: Date;
+  entregaFim?: Date;
   status?: string;
+  ordem?: "antiga" | "recente";
+  buscaDetalhada?: boolean;
   page: number;
   pageSize: number;
 }
@@ -17,8 +25,9 @@ const selecaoPublica = {
   nome: true,
   descricao: true,
   finalidade: true,
+  dataConclusao: true,
   endereco: {
-    select: { cidade: { select: { id: true, nome: true, estado: { select: { sigla: true } } } } },
+    select: { cidade: { select: { id: true, nome: true, estado: { select: { sigla: true, regiao: true } } } } },
   },
   projetosVerba: { select: { valorAlocado: true } },
   contratos: {
@@ -42,7 +51,8 @@ const selecaoPublica = {
     },
   },
   fiscalizacoes: {
-    select: { id: true, dataVistoria: true, percentualExecutado: true, statusVistoria: true },
+    orderBy: [{ dataVistoria: "desc" }, { id: "desc" }],
+    select: { id: true, etapaCronogramaId: true, dataVistoria: true, percentualExecutado: true, statusVistoria: true },
   },
   alertas: {
     where: { publicado: true },
@@ -66,7 +76,8 @@ function toPublicDTO(obra: ObraSelecionada) {
     nome: obra.nome,
     descricao: obra.descricao,
     finalidade: obra.finalidade,
-    municipio: { id: cidade.id, nome: cidade.nome, uf: cidade.estado.sigla },
+    dataConclusao: obra.dataConclusao?.toISOString().slice(0, 10) ?? null,
+    municipio: { id: cidade.id, nome: cidade.nome, uf: cidade.estado.sigla, regiao: cidade.estado.regiao },
     etapas: obra.etapas.map((etapa) => ({
       id: etapa.id,
       nomeEtapa: etapa.nomeEtapa,
@@ -116,32 +127,63 @@ export interface TransparenciaPagination {
   items: ObraPublicaDTO[];
 }
 
+type FiltrosDeObras = Omit<TransparenciaFilters, "page" | "pageSize" | "ordem">;
+
+function filtroObras(filters: FiltrosDeObras): Prisma.projeto_obraWhereInput {
+  const fimMinimo = filters.dataInicio && filters.conclusaoInicio
+    ? new Date(Math.max(filters.dataInicio.getTime(), filters.conclusaoInicio.getTime()))
+    : filters.dataInicio ?? filters.conclusaoInicio;
+  const etapa: Prisma.etapa_cronogramaWhereInput = {
+    ...(filters.status && { status: filters.status }),
+    ...((fimMinimo || filters.conclusaoFim) && {
+      dataFimPrevista: { gte: fimMinimo, lte: filters.conclusaoFim },
+    }),
+    ...(filters.dataFim && { dataInicioPrevista: { lte: filters.dataFim } }),
+  };
+  return {
+    publicado: true,
+    ...((filters.entregaInicio || filters.entregaFim) && {
+      dataConclusao: { gte: filters.entregaInicio, lte: filters.entregaFim },
+    }),
+    ...(filters.busca && {
+      OR: [
+        { nome: { contains: filters.busca } },
+        { descricao: { contains: filters.busca } },
+        ...(filters.buscaDetalhada ? [
+          { finalidade: { contains: filters.busca } },
+          { endereco: { cidade: { nome: { contains: filters.busca } } } },
+          { endereco: { cidade: { estado: { OR: [
+            { nome: { contains: filters.busca } },
+            { sigla: filters.busca },
+            { regiao: { contains: filters.busca } },
+          ] } } } },
+        ] : []),
+      ],
+    }),
+    ...(filters.finalidade && { finalidade: filters.finalidade }),
+    ...((filters.cidadeId || filters.estadoId || filters.regiao) && {
+      endereco: {
+        cidade: {
+          id: filters.cidadeId,
+          estadoId: filters.estadoId,
+          ...(filters.regiao && { estado: { regiao: filters.regiao } }),
+        },
+      },
+    }),
+    ...(Object.keys(etapa).length > 0 && { etapas: { some: etapa } }),
+  };
+}
+
 export class TransparenciaRepository {
   async findAll(filters: TransparenciaFilters): Promise<TransparenciaPagination> {
-    const etapa: Prisma.etapa_cronogramaWhereInput = {
-      ...(filters.status && { status: filters.status }),
-      ...(filters.dataInicio && { dataFimPrevista: { gte: filters.dataInicio } }),
-      ...(filters.dataFim && { dataInicioPrevista: { lte: filters.dataFim } }),
-    };
-    const where: Prisma.projeto_obraWhereInput = {
-      publicado: true,
-      ...(filters.busca && {
-        OR: [
-          { nome: { contains: filters.busca } },
-          { descricao: { contains: filters.busca } },
-        ],
-      }),
-      ...(filters.finalidade && { finalidade: filters.finalidade }),
-      ...(filters.cidadeId && { endereco: { cidadeId: filters.cidadeId } }),
-      ...(Object.keys(etapa).length > 0 && { etapas: { some: etapa } }),
-    };
+    const where = filtroObras(filters);
     const [total, obras] = await prisma.$transaction([
       prisma.projeto_obra.count({ where }),
       prisma.projeto_obra.findMany({
         where,
         skip: (filters.page - 1) * filters.pageSize,
         take: filters.pageSize,
-        orderBy: { id: "asc" },
+        orderBy: { id: filters.ordem === "recente" ? "desc" : "asc" },
         select: selecaoPublica,
       }),
     ]);
@@ -151,6 +193,47 @@ export class TransparenciaRepository {
       total,
       totalPages: Math.ceil(total / filters.pageSize),
       items: obras.map(toPublicDTO),
+    };
+  }
+
+  async listFilterOptions({ busca, buscaDetalhada, regiao, estadoId, cidadeId, finalidade, status }: FiltrosDeObras = {}) {
+    const buscaBase = { busca, buscaDetalhada };
+    const localizacao = { ...buscaBase, regiao, estadoId, cidadeId };
+    const [cidades, finalidades, etapas, entregas] = await prisma.$transaction([
+      prisma.cidade.findMany({
+        where: { enderecos: { some: { projetos: { some: filtroObras(buscaBase) } } } },
+        select: {
+          id: true,
+          nome: true,
+          estado: { select: { id: true, nome: true, sigla: true, regiao: true } },
+        },
+        orderBy: [{ nome: "asc" }, { id: "asc" }],
+      }),
+      prisma.projeto_obra.groupBy({
+        by: ["finalidade"],
+        where: filtroObras(localizacao),
+        orderBy: { finalidade: "asc" },
+      }),
+      prisma.etapa_cronograma.groupBy({
+        by: ["status"],
+        where: { projetoObra: filtroObras({ ...localizacao, finalidade }) },
+        orderBy: { status: "asc" },
+      }),
+      prisma.projeto_obra.groupBy({
+        by: ["dataConclusao"],
+        where: { ...filtroObras({ ...localizacao, finalidade, status }), dataConclusao: { not: null } },
+        orderBy: { dataConclusao: "asc" },
+      }),
+    ]);
+    const estados = [...new Map(cidades.map(({ estado }) => [estado.id, estado])).values()]
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    return {
+      regioes: [...new Set(estados.map(({ regiao }) => regiao))].sort((a, b) => a.localeCompare(b, "pt-BR")),
+      estados,
+      cidades: cidades.map(({ id, nome, estado }) => ({ id, nome, estadoId: estado.id })),
+      finalidades: finalidades.map(({ finalidade }) => finalidade),
+      status: etapas.map(({ status }) => status),
+      entregas: entregas.flatMap(({ dataConclusao }) => dataConclusao ? [dataConclusao.toISOString().slice(0, 10)] : []),
     };
   }
 

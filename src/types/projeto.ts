@@ -1,4 +1,5 @@
 export interface CreateProjetoDTO {
+  dataConclusao?: string | null;
   nome: string;
   descricao: string;
   finalidade: string;
@@ -6,6 +7,7 @@ export interface CreateProjetoDTO {
 }
 
 export interface UpdateProjetoDTO {
+  dataConclusao?: string | null;
   publicado?: boolean;
   nome: string;
   descricao: string;
@@ -14,6 +16,7 @@ export interface UpdateProjetoDTO {
 }
 
 export interface ProjetoResponseDTO {
+  dataConclusao: string | null;
   publicado: boolean;
   id: number;
   nome: string;

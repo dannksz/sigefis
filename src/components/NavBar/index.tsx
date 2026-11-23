@@ -12,7 +12,7 @@ export default function Navbar() {
         </Link>
         <nav className="portal-nav" aria-label="Navegação principal">
           <ul className="portal-nav-links">
-            <li><Link href="/#consultas">Obras</Link></li>
+            <li><Link href="/obras">Obras</Link></li>
             <li><PortalDialog label="Sobre" title="Sobre o SIGEFIS">
               <p>O SIGEFIS reúne dados sobre obras, contratos, fiscalizações e uso de recursos públicos.</p>
             </PortalDialog></li>

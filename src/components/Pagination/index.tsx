@@ -1,71 +1,20 @@
-type PaginationProps = {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-};
+"use client";
 
-export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
-  const getVisiblePages = () => {
-    const pages = [];
-    const maxVisible = 5;
-    
-    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(totalPages, start + maxVisible - 1);
-    
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-    
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    
-    return pages;
-  };
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
+type Props = { currentPage: number; totalPages: number; onPageChange: (page: number) => void; disabled?: boolean };
+
+export default function Pagination({ currentPage, totalPages, onPageChange, disabled = false }: Props) {
+  if (totalPages <= 1) return null;
   return (
-    <div className="flex justify-center pb-8">
-      <div className="flex gap-2">
-        {/* Botão anterior */}
-        {currentPage > 1 && (
-          <button
-            onClick={() => onPageChange(currentPage - 1)}
-            className="w-8 h-8 rounded border hover:bg-gray-100 flex items-center justify-center"
-          >
-            ←
-          </button>
-        )}
-        
-        {/* Páginas visíveis */}
-        {getVisiblePages().map((page) => (
-          <button
-            key={page}
-            onClick={() => onPageChange(page)}
-            className={`w-8 h-8 rounded flex items-center justify-center ${
-              currentPage === page
-                ? "bg-blue-600 text-white"
-                : "border hover:bg-gray-100"
-            }`}
-          >
-            {page}
-          </button>
+    <nav className="flex justify-center py-8" aria-label="Paginação das obras">
+      <div className="flex items-center gap-2">
+        <button type="button" aria-label="Página anterior" disabled={disabled || currentPage === 1} onClick={() => onPageChange(currentPage - 1)} className="grid size-9 cursor-pointer place-items-center disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={17} aria-hidden="true" /></button>
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+          <button key={page} type="button" aria-label={`Ir para a página ${page}`} aria-current={currentPage === page ? "page" : undefined} disabled={disabled} onClick={() => onPageChange(page)} className="grid size-9 cursor-pointer place-items-center bg-primary text-sm transition-colors duration-300 hover:bg-primary-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary aria-current:bg-primary-dark disabled:cursor-wait">{page}</button>
         ))}
-        
-        {/* Elipses se necessário */}
-        {totalPages > 5 && currentPage < totalPages - 2 && (
-          <span className="px-2 flex items-center">...</span>
-        )}
-        
-        {/* Próxima página */}
-        {currentPage < totalPages && (
-          <button
-            onClick={() => onPageChange(currentPage + 1)}
-            className="w-8 h-8 rounded border hover:bg-gray-100 flex items-center justify-center"
-          >
-            →
-          </button>
-        )}
+        <button type="button" aria-label="Próxima página" disabled={disabled || currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)} className="grid size-9 cursor-pointer place-items-center disabled:cursor-not-allowed disabled:opacity-30"><ChevronRight size={17} aria-hidden="true" /></button>
       </div>
-    </div>
+    </nav>
   );
 }

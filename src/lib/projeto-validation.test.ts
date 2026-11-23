@@ -54,4 +54,13 @@ describe("project request validation", () => {
     });
     expect(parseUpdateProjetoInput({})).toMatchObject({ success: false });
   });
+
+  it("accepts calendar dates and null for the expected completion date", () => {
+    expect(parseCreateProjetoInput({ ...validProject, dataConclusao: "2028-02-29" }))
+      .toMatchObject({ success: true, data: { dataConclusao: "2028-02-29" } });
+    expect(parseCreateProjetoInput({ ...validProject, dataConclusao: "2027-02-29" }))
+      .toMatchObject({ success: false });
+    expect(parseUpdateProjetoInput({ dataConclusao: null }))
+      .toEqual({ success: true, data: { dataConclusao: null } });
+  });
 });

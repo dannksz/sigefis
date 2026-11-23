@@ -114,14 +114,19 @@ As rotas abaixo aceitam consultas sem autenticação.
 |---|---|
 | `GET /api/publico/obras` | Lista de obras ordenada por ID, com `page`, `pageSize`, `total`, `totalPages` e `items`. Uma busca sem resultados retorna HTTP `200` com `items: []`. |
 | `GET /api/publico/obras/{id}` | Uma obra publicada. Retorna HTTP `400` para ID inválido e `404` se a obra não existir ou estiver privada. |
+| `GET /api/publico/obras/filtros` | Opções de região, estado, município, finalidade e status das obras publicadas. |
 
 | Parâmetro da lista | Comportamento |
 |---|---|
 | `busca` | Busca por trecho do nome ou da descrição. |
 | `finalidade` | Filtra pelo valor da finalidade. |
+| `regiao` | Nome da região do endereço da obra, como `Sudeste`. |
+| `estadoId` | ID inteiro positivo do estado do município. |
 | `cidadeId` | ID inteiro positivo do município associado ao endereço da obra. |
 | `dataInicio`, `dataFim` | Limites opcionais em `YYYY-MM-DD`. A obra entra no resultado se pelo menos uma etapa prevista cruzar o intervalo, incluindo as datas de início e fim. É possível informar só um dos limites. |
 | `status` | Status de uma etapa, por exemplo `EM_EXECUCAO`. Com filtro de período, a mesma etapa precisa atender às duas condições. |
+| `conclusaoInicio`, `conclusaoFim` | Limites inclusivos da **data de término prevista da etapa**, em `YYYY-MM-DD`. É possível informar só um dos limites. Com status ou período, a mesma etapa precisa atender a todas as condições. |
+| `entregaInicio`, `entregaFim` | Limites inclusivos da **entrega prevista da obra**, em `YYYY-MM-DD`. É possível informar só um dos limites. Obras sem previsão ficam fora desse filtro. |
 | `page` | Número da página a partir de 1. Padrão `1`. |
 | `pageSize` | Quantidade de itens de 1 a 100. Padrão `10`. |
 
@@ -130,10 +135,14 @@ Valores inválidos de paginação usam os padrões. Município malformado, data 
 Exemplo de consulta:
 
 ```http
-GET /api/publico/obras?cidadeId=1&dataInicio=2026-05-01&dataFim=2026-06-30&status=EM_EXECUCAO&page=1&pageSize=10
+GET /api/publico/obras?regiao=Sudeste&conclusaoInicio=2026-05-01&conclusaoFim=2026-06-30&status=EM_EXECUCAO&page=1&pageSize=10
 ```
 
-Cada obra contém `id`, `nome`, `descricao`, `finalidade`, `municipio` (`id`, `nome`, `uf`), `etapas`, `contratos`, `pagamentosAprovados`, `liberacoesAprovadas`, `fiscalizacoes`, `alertas` e `totaisFinanceiros`. As etapas retornam ID, nome, status e datas previstas. As datas públicas usam `YYYY-MM-DD`.
+O endpoint de opções devolve `regioes`, `finalidades` e `status` como listas de strings. `estados` contém `id`, `nome`, `sigla` e `regiao`. `cidades` contém `id`, `nome` e `estadoId`. O frontend pode cruzar esses campos para montar os seletores em cascata. Cada localização e valor de opção vem de pelo menos uma obra publicada.
+
+Cada obra contém `id`, `nome`, `descricao`, `finalidade`, `dataConclusao`, `municipio` (`id`, `nome`, `uf`), `etapas`, `contratos`, `pagamentosAprovados`, `liberacoesAprovadas`, `fiscalizacoes`, `alertas` e `totaisFinanceiros`. `dataConclusao` representa a entrega prevista da obra e retorna `null` quando não informada. As etapas retornam ID, nome, status e datas previstas. As datas públicas usam `YYYY-MM-DD`.
+
+`POST /api/projetos` e `PUT /api/projetos/{id}` aceitam `dataConclusao` opcional em `YYYY-MM-DD`. Em uma edição, omitir o campo preserva a data gravada e enviar `null` limpa a previsão.
 
 `totaisFinanceiros` tem quatro valores em reais, como strings decimais com duas casas. `alocado` soma os vínculos projeto–verba, `contratado` soma os contratos, `liberado` soma liberações aprovadas e `pago` soma pagamentos aprovados. Os filtros selecionam obras, e a resposta inclui todas as etapas e os totais integrais de cada obra selecionada.
 

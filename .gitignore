@@ -44,3 +44,4 @@ next-env.d.ts
 
 # local evidence storage
 /storage/uploads/evidencias/
+/backups/
