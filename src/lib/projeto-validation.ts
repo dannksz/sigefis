@@ -1,4 +1,5 @@
-import type { CreateProjetoDTO, UpdateProjetoDTO } from "@/types/projeto";
+import type { CreateProjetoDTO, CreateProjetoEnderecoDTO, UpdateProjetoDTO } from "@/types/projeto";
+import { parseCreateEnderecoInput } from "./endereco-validation";
 
 type ValidationResult<T> =
   | { success: true; data: T }
@@ -10,7 +11,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function hasOnlyFields(value: Record<string, unknown>, update = false): boolean {
   const allowedFields = ["nome", "descricao", "finalidade", "enderecoId", "dataConclusao"];
-  return Object.keys(value).every((key) => allowedFields.includes(key) || (update && key === "publicado"));
+  return Object.keys(value).every(
+    (key) => allowedFields.includes(key) || key === "endereco" || (update && key === "publicado"),
+  );
 }
 
 function isValidDataConclusao(value: unknown): value is string | null {
@@ -36,6 +39,37 @@ function isValidEnderecoId(value: unknown): value is number {
     Number.isSafeInteger(value) &&
     value > 0
   );
+}
+
+function parseProjectAddress(value: unknown): ValidationResult<CreateProjetoEnderecoDTO> {
+  if (!isRecord(value) || !("cidade" in value)) return parseCreateEnderecoInput(value);
+  if ("cidadeId" in value || !isRecord(value.cidade)) return invalidFields();
+  if (!Object.keys(value.cidade).every((key) => ["nome", "estadoId"].includes(key))) return invalidFields();
+  const cidadeNome = value.cidade.nome;
+  const estadoId = value.cidade.estadoId;
+  if (!isValidText(cidadeNome, 100) || !isValidEnderecoId(estadoId)) {
+    return { success: false, error: "Informe uma cidade e um estado válidos." };
+  }
+  const address = parseCreateEnderecoInput({
+    logradouro: value.logradouro,
+    numero: value.numero,
+    ...(value.complemento !== undefined && { complemento: value.complemento }),
+    bairro: value.bairro,
+    cep: value.cep,
+    cidadeId: 1,
+  });
+  if (!address.success) return address;
+  return {
+    success: true,
+    data: {
+      logradouro: address.data.logradouro,
+      numero: address.data.numero,
+      complemento: address.data.complemento,
+      bairro: address.data.bairro,
+      cep: address.data.cep,
+      cidade: { nome: cidadeNome.trim(), estadoId },
+    },
+  };
 }
 
 function invalidFields(): ValidationResult<never> {
@@ -70,26 +104,35 @@ export function parseCreateProjetoInput(
     };
   }
 
-  if (!isValidEnderecoId(value.enderecoId)) {
+  const hasEnderecoId = "enderecoId" in value;
+  const hasEndereco = "endereco" in value;
+  if (hasEnderecoId === hasEndereco) {
     return {
       success: false,
-      error: "Endereço deve ser um ID inteiro positivo.",
+      error: "Informe um endereço cadastrado ou os dados completos de um novo endereço.",
     };
   }
+  if (hasEnderecoId && !isValidEnderecoId(value.enderecoId)) {
+    return { success: false, error: "Endereço deve ser um ID inteiro positivo." };
+  }
+  const endereco = hasEndereco ? parseProjectAddress(value.endereco) : null;
+  if (endereco && !endereco.success) return endereco;
   const { dataConclusao } = value;
   if (dataConclusao !== undefined && !isValidDataConclusao(dataConclusao)) {
     return { success: false, error: "Informe uma data de conclusão válida em YYYY-MM-DD ou null." };
   }
 
+  const base = {
+    nome: value.nome.trim(),
+    descricao: value.descricao.trim(),
+    finalidade: value.finalidade.trim(),
+    ...(dataConclusao !== undefined && { dataConclusao }),
+  };
   return {
     success: true,
-    data: {
-      nome: value.nome.trim(),
-      descricao: value.descricao.trim(),
-      finalidade: value.finalidade.trim(),
-      enderecoId: value.enderecoId,
-      ...(dataConclusao !== undefined && { dataConclusao }),
-    },
+    data: hasEnderecoId
+      ? { ...base, enderecoId: value.enderecoId as number }
+      : { ...base, endereco: endereco!.data },
   };
 }
 
@@ -108,6 +151,14 @@ export function parseUpdateProjetoInput(
   }
 
   const data: Partial<UpdateProjetoDTO> = {};
+  if ("endereco" in value) {
+    if ("enderecoId" in value) {
+      return { success: false, error: "Informe o endereço completo ou um endereço cadastrado, não ambos." };
+    }
+    const endereco = parseProjectAddress(value.endereco);
+    if (!endereco.success) return endereco;
+    data.endereco = endereco.data;
+  }
   if ("dataConclusao" in value) {
     if (!isValidDataConclusao(value.dataConclusao)) {
       return { success: false, error: "Informe uma data de conclusão válida em YYYY-MM-DD ou null." };

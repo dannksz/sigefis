@@ -6,8 +6,8 @@ import { parseCreateProjetoInput } from "@/lib/projeto-validation";
 
 const projetoService = new ProjetoService();
 
-function isEnderecoNotFound(error: unknown): error is Error {
-  return error instanceof Error && error.message === "Endereço não encontrado.";
+function isLocationNotFound(error: unknown): error is Error {
+  return error instanceof Error && ["Endereço não encontrado.", "Cidade não encontrada.", "Estado não encontrado."].includes(error.message);
 }
 
 export async function GET(request: Request) {
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     await auditRequestSuccess(request, "CRIAR_PROJETO", projeto.id);
     return NextResponse.json(projeto, { status: 201 });
   } catch (error: unknown) {
-    if (isEnderecoNotFound(error)) {
+    if (isLocationNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 

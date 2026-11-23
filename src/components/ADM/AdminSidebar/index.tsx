@@ -13,8 +13,8 @@ type MenuItem = { name: string; icon: typeof Gauge; roles: Exclude<UserRole, "US
 const menuItems: MenuItem[] = [
   { name: "Dashboard", icon: Gauge, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm" },
   { name: "Usuários e perfis", icon: Users, roles: ["ADMIN"], href: "/adm/usuarios" },
+  { name: "Obras públicas", icon: Landmark, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/obras" },
   { name: "Órgãos e empresas", icon: Building2, roles: ["ADMIN", "GESTOR"] },
-  { name: "Obras públicas", icon: Landmark, roles: ["ADMIN", "GESTOR", "FISCAL"] },
   { name: "Contratos", icon: BriefcaseBusiness, roles: ["ADMIN", "GESTOR"] },
   { name: "Cronograma", icon: ClipboardCheck, roles: ["ADMIN", "GESTOR", "FISCAL"] },
   { name: "Verbas e emendas", icon: WalletCards, roles: ["ADMIN", "GESTOR"] },
@@ -34,7 +34,7 @@ export default function AdminSidebar({ role }: { role: Exclude<UserRole, "USER">
         <ul className="grid grid-cols-2 gap-1 sm:grid-cols-3 md:block md:space-y-1">
           {menuItems.filter((item) => item.roles.includes(role)).map((item) => {
             const Icon = item.icon;
-            const active = item.href === "/adm" ? pathname === "/adm" : pathname === item.href;
+            const active = item.href === "/adm" ? pathname === "/adm" : pathname === item.href || Boolean(item.href && pathname.startsWith(`${item.href}/`));
             const content = <><Icon className="size-5 shrink-0" aria-hidden="true" /><span>{item.name}</span></>;
             return (
               <li key={item.name}>

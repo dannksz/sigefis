@@ -63,4 +63,40 @@ describe("project request validation", () => {
     expect(parseUpdateProjetoInput({ dataConclusao: null }))
       .toEqual({ success: true, data: { dataConclusao: null } });
   });
+
+  it("accepts a complete nested address and rejects ambiguous address input", () => {
+    const project = {
+      nome: validProject.nome,
+      descricao: validProject.descricao,
+      finalidade: validProject.finalidade,
+    };
+    const endereco = {
+      logradouro: "Rua das Flores",
+      numero: "100",
+      complemento: "Bloco A",
+      bairro: "Centro",
+      cep: "13010-000",
+      cidadeId: 1,
+    };
+    expect(parseCreateProjetoInput({ ...project, endereco })).toMatchObject({
+      success: true,
+      data: { endereco: { ...endereco, cep: "13010000" } },
+    });
+    expect(parseCreateProjetoInput({ ...validProject, endereco })).toMatchObject({ success: false });
+    expect(parseCreateProjetoInput(project)).toMatchObject({ success: false });
+    expect(parseUpdateProjetoInput({ endereco })).toMatchObject({ success: true });
+    expect(parseCreateProjetoInput({
+      ...project,
+      endereco: {
+        logradouro: "Rua Nova",
+        numero: "10",
+        bairro: "Centro",
+        cep: "80000000",
+        cidade: { nome: "Curitiba", estadoId: 18 },
+      },
+    })).toMatchObject({
+      success: true,
+      data: { endereco: { cidade: { nome: "Curitiba", estadoId: 18 } } },
+    });
+  });
 });

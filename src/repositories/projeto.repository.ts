@@ -3,9 +3,24 @@ import type { projeto_obra } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import type {
   CreateProjetoDTO,
+  CreateProjetoEnderecoDTO,
   ProjetoResponseDTO,
   UpdateProjetoDTO,
 } from "@/types/projeto";
+
+function nestedAddressData(address: CreateProjetoEnderecoDTO) {
+  if (!("cidade" in address)) return address;
+  const { cidade, ...addressFields } = address;
+  return {
+    ...addressFields,
+    cidade: {
+      connectOrCreate: {
+        where: { nome_estadoId: { nome: cidade.nome, estadoId: cidade.estadoId } },
+        create: cidade,
+      },
+    },
+  };
+}
 
 function toResponseDTO(projeto: projeto_obra): ProjetoResponseDTO {
   return {
@@ -21,12 +36,15 @@ function toResponseDTO(projeto: projeto_obra): ProjetoResponseDTO {
 
 export class ProjetoRepository {
   async create(data: CreateProjetoDTO): Promise<ProjetoResponseDTO> {
+    const nestedAddress = data.endereco ? nestedAddressData(data.endereco) : undefined;
     const projeto = await prisma.projeto_obra.create({
       data: {
         nome: data.nome,
         descricao: data.descricao,
         finalidade: data.finalidade,
-        enderecoId: data.enderecoId,
+        ...(data.enderecoId !== undefined
+          ? { enderecoId: data.enderecoId }
+          : { endereco: { create: nestedAddress! } }),
         dataConclusao: data.dataConclusao ? new Date(`${data.dataConclusao}T00:00:00.000Z`) : null,
       },
     });
@@ -67,19 +85,24 @@ export class ProjetoRepository {
     id: number,
     data: UpdateProjetoDTO,
   ): Promise<ProjetoResponseDTO> {
-    const projeto = await prisma.projeto_obra.update({
-      where: { id },
-      data: {
-        ...(data.nome !== undefined && { nome: data.nome }),
-        ...(data.descricao !== undefined && { descricao: data.descricao }),
-        ...(data.finalidade !== undefined && { finalidade: data.finalidade }),
-        ...(data.enderecoId !== undefined && { enderecoId: data.enderecoId }),
-        publicado: data.publicado,
-        ...(data.dataConclusao !== undefined && {
-          dataConclusao: data.dataConclusao === null ? null : new Date(`${data.dataConclusao}T00:00:00.000Z`),
-        }),
-      },
-    });
+    const scalarData = {
+      ...(data.nome !== undefined && { nome: data.nome }),
+      ...(data.descricao !== undefined && { descricao: data.descricao }),
+      ...(data.finalidade !== undefined && { finalidade: data.finalidade }),
+      publicado: data.publicado,
+      ...(data.dataConclusao !== undefined && {
+        dataConclusao: data.dataConclusao === null ? null : new Date(`${data.dataConclusao}T00:00:00.000Z`),
+      }),
+    };
+    const projeto = data.endereco !== undefined
+      ? await prisma.projeto_obra.update({
+          where: { id },
+          data: { ...scalarData, endereco: { update: nestedAddressData(data.endereco) } },
+        })
+      : await prisma.projeto_obra.update({
+          where: { id },
+          data: { ...scalarData, ...(data.enderecoId !== undefined && { enderecoId: data.enderecoId }) },
+        });
 
     return toResponseDTO(projeto);
   }

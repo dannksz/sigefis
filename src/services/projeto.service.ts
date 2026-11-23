@@ -1,5 +1,7 @@
 import type { ListQuery } from "@/lib/pagination";
 import { EnderecoRepository } from "@/repositories/endereco.repository";
+import { CidadeRepository } from "@/repositories/cidade.repository";
+import { EstadoRepository } from "@/repositories/estado.repository";
 import { ProjetoRepository } from "@/repositories/projeto.repository";
 import type {
   CreateProjetoDTO,
@@ -10,10 +12,14 @@ import type {
 export class ProjetoService {
   private projetoRepository: ProjetoRepository;
   private enderecoRepository: EnderecoRepository;
+  private cidadeRepository: CidadeRepository;
+  private estadoRepository: EstadoRepository;
 
   constructor() {
     this.projetoRepository = new ProjetoRepository();
     this.enderecoRepository = new EnderecoRepository();
+    this.cidadeRepository = new CidadeRepository();
+    this.estadoRepository = new EstadoRepository();
   }
 
   private async ensureEnderecoExists(enderecoId: number): Promise<void> {
@@ -25,7 +31,15 @@ export class ProjetoService {
   }
 
   async create(data: CreateProjetoDTO): Promise<ProjetoResponseDTO> {
-    await this.ensureEnderecoExists(data.enderecoId);
+    if (data.enderecoId !== undefined) {
+      await this.ensureEnderecoExists(data.enderecoId);
+    } else if (data.endereco.cidadeId !== undefined) {
+      if (!(await this.cidadeRepository.findById(data.endereco.cidadeId))) {
+        throw new Error("Cidade não encontrada.");
+      }
+    } else if (!(await this.estadoRepository.findById(data.endereco.cidade.estadoId))) {
+      throw new Error("Estado não encontrado.");
+    }
     return this.projetoRepository.create(data);
   }
 
@@ -51,6 +65,12 @@ export class ProjetoService {
 
     if (data.enderecoId !== undefined) {
       await this.ensureEnderecoExists(data.enderecoId);
+    }
+    if (data.endereco?.cidadeId !== undefined && !(await this.cidadeRepository.findById(data.endereco.cidadeId))) {
+      throw new Error("Cidade não encontrada.");
+    }
+    if (data.endereco && data.endereco.cidadeId === undefined && !(await this.estadoRepository.findById(data.endereco.cidade.estadoId))) {
+      throw new Error("Estado não encontrado.");
     }
 
     return this.projetoRepository.update(id, data);

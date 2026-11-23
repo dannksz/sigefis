@@ -22,7 +22,7 @@ function isProjetoNotFound(error: unknown): error is Error {
 }
 
 function isEnderecoNotFound(error: unknown): error is Error {
-  return error instanceof Error && error.message === "Endereço não encontrado.";
+  return error instanceof Error && ["Endereço não encontrado.", "Cidade não encontrada.", "Estado não encontrado."].includes(error.message);
 }
 
 export async function GET(_request: Request, { params }: Params) {
