@@ -7,7 +7,7 @@ type Props = { currentPage: number; totalPages: number; onPageChange: (page: num
 export default function Pagination({ currentPage, totalPages, onPageChange, disabled = false }: Props) {
   if (totalPages <= 1) return null;
   return (
-    <nav className="flex justify-center py-8" aria-label="Paginação das obras">
+    <nav className="flex justify-center py-8" aria-label="Paginação dos registros">
       <div className="flex items-center gap-2">
         <button type="button" aria-label="Página anterior" disabled={disabled || currentPage === 1} onClick={() => onPageChange(currentPage - 1)} className="grid size-9 cursor-pointer place-items-center disabled:cursor-not-allowed disabled:opacity-30"><ChevronLeft size={17} aria-hidden="true" /></button>
         {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (

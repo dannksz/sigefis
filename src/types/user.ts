@@ -31,6 +31,8 @@ export interface UserResponseDTO {
   cpf: string;
   cnpj?: string | null;
   role: UserRole;
+  dataNascimento: string | null;
+  enderecoId: number | null;
   criadoEm: Date;
   atualizadoEm: Date;
 }

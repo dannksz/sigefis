@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 
-type Column<T> = {
+export type Column<T> = {
   key: string;
   header: string;
   align?: "left" | "center" | "right";
@@ -13,7 +13,7 @@ type AdminTableProps<T> = {
   keyExtractor: (item: T) => string | number;
 };
 
-export default function AdminTable<T>({ columns, data, keyExtractor }: AdminTableProps<T>) {
+export default function AdminTable<T extends object>({ columns, data, keyExtractor }: AdminTableProps<T>) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <div className="overflow-x-auto">
@@ -52,7 +52,7 @@ export default function AdminTable<T>({ columns, data, keyExtractor }: AdminTabl
                   >
                     {column.render
                       ? column.render(item)
-                      : String((item as any)[column.key] || "")}
+                      : String((item as Record<string, unknown>)[column.key] ?? "")}
                   </td>
                 ))}
               </tr>

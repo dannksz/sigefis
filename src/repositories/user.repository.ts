@@ -11,6 +11,8 @@ function toResponseDTO(user: usuario): UserResponseDTO {
     cpf: user.cpf,
     cnpj: user.cnpj || null,
     role: user.role,
+    dataNascimento: user.dataNascimento?.toISOString().slice(0, 10) ?? null,
+    enderecoId: user.enderecoId,
     criadoEm: user.criadoEm,
     atualizadoEm: user.atualizadoEm,
   };
