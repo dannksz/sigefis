@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, UserRound } from "lucide-react";
+import { LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useSyncExternalStore } from "react";
@@ -68,6 +68,11 @@ export default function AuthMenu() {
           <p className="truncate text-sm font-bold text-secondary">{user.nome}</p>
           <p className="mt-0.5 truncate text-xs text-[#666]">{user.email}</p>
         </div>
+        {user.role !== "USER" && (
+          <Link href="/adm" role="menuitem" className="mt-1 flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-secondary transition-colors duration-300 hover:bg-ice focus-visible:bg-ice focus-visible:outline-none">
+            <LayoutDashboard size={16} aria-hidden="true" /> Acessar painel administrativo
+          </Link>
+        )}
         <button type="button" role="menuitem" onClick={logout} className="mt-1 flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-md px-3 text-left text-sm text-secondary transition-colors duration-300 hover:bg-ice hover:text-red-600 focus-visible:bg-ice focus-visible:text-red-600 focus-visible:outline-none">
           <LogOut size={16} aria-hidden="true" /> Deslogar
         </button>

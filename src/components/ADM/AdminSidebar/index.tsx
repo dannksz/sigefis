@@ -1,55 +1,43 @@
-'use client';
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Shield, 
-  Users, 
-  Package, 
-  Send, 
-  Star, 
-  MessageSquare, 
-  Image as ImageIcon, 
-  HelpCircle
-} from "lucide-react";
+"use client";
 
-const menuItems = [
-  { name: "Dashboard", icon: LayoutDashboard, href: "/adm/home" },
-  { name: "Administradores", icon: Shield, href: "/adm/administrador/gerenciarAdministradores" },
-  { name: "Usuários", icon: Users, href: "/adm/usuario/gerenciarUsuarios" },
-  { name: "Produtos", icon: Package, href: "/adm/produto/gerenciarProdutos" },
-  { name: "Pedidos", icon: Send, href: "/adm/pedidos" },
-  { name: "Avaliações", icon: Star, href: "/adm/avaliacoes" },
-  { name: "Mensagens", icon: MessageSquare, href: "/adm/mensagens" },
-  { name: "Carousel", icon: ImageIcon, href: "/adm/carousel" },
-  { name: "Guia de Produtos", icon: HelpCircle, href: "/adm/guia" },
+import {
+  AlertTriangle, Banknote, BriefcaseBusiness, Building2, ClipboardCheck, FileCheck2,
+  FileSearch, Gauge, Landmark, ScrollText, ShieldCheck, Users, WalletCards,
+} from "lucide-react";
+import type { UserRole } from "@/types/user";
+
+type MenuItem = { name: string; icon: typeof Gauge; roles: Exclude<UserRole, "USER">[] };
+
+const menuItems: MenuItem[] = [
+  { name: "Dashboard", icon: Gauge, roles: ["ADMIN", "GESTOR", "FISCAL"] },
+  { name: "Usuários e perfis", icon: Users, roles: ["ADMIN"] },
+  { name: "Órgãos e empresas", icon: Building2, roles: ["ADMIN", "GESTOR"] },
+  { name: "Obras públicas", icon: Landmark, roles: ["ADMIN", "GESTOR", "FISCAL"] },
+  { name: "Contratos", icon: BriefcaseBusiness, roles: ["ADMIN", "GESTOR"] },
+  { name: "Cronograma", icon: ClipboardCheck, roles: ["ADMIN", "GESTOR", "FISCAL"] },
+  { name: "Verbas e emendas", icon: WalletCards, roles: ["ADMIN", "GESTOR"] },
+  { name: "Financeiro", icon: Banknote, roles: ["ADMIN", "GESTOR"] },
+  { name: "Fiscalizações", icon: FileSearch, roles: ["ADMIN", "FISCAL"] },
+  { name: "Evidências", icon: FileCheck2, roles: ["ADMIN", "FISCAL"] },
+  { name: "Alertas e bloqueios", icon: AlertTriangle, roles: ["ADMIN", "GESTOR", "FISCAL"] },
+  { name: "Regularização", icon: ShieldCheck, roles: ["ADMIN", "GESTOR", "FISCAL"] },
+  { name: "Auditoria", icon: ScrollText, roles: ["ADMIN"] },
 ];
 
-export default function AdminSidebar() {
-  const pathname = usePathname();
-
+export default function AdminSidebar({ role }: { role: Exclude<UserRole, "USER"> }) {
   return (
-    <aside className="w-52 bg-primary-dark h-[calc(100vh-5rem)] fixed left-0 top-20 flex flex-col">
-      {/* Menu Items */}
-      <nav className="flex-1 py-6 overflow-y-auto">
-        <ul className="space-y-1 px-3">
-          {menuItems.map((item) => {
+    <aside className="w-full bg-secondary text-white md:fixed md:bottom-0 md:left-0 md:top-20 md:w-64">
+      <nav className="h-full overflow-y-auto px-3 py-4" aria-label="Setores administrativos">
+        <ul className="grid grid-cols-2 gap-1 sm:grid-cols-3 md:block md:space-y-1">
+          {menuItems.filter((item) => item.roles.includes(role)).map((item, index) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-            
+            const active = index === 0;
             return (
               <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'bg-primary-dark text-secondary font-semibold'
-                      : 'text-white hover:bg-primary-light'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-secondary' : 'text-white'}`} />
-                  <span className="text-sm">{item.name}</span>
-                </Link>
+                <button type="button" aria-current={active ? "page" : undefined} aria-label={`${item.name}: tela de gerenciamento ainda não criada`} className={`flex min-h-11 w-full cursor-default items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${active ? "bg-primary font-bold text-secondary" : "text-white hover:bg-secondary-light"}`}>
+                  <Icon className="size-5 shrink-0" aria-hidden="true" />
+                  <span>{item.name}</span>
+                </button>
               </li>
             );
           })}
