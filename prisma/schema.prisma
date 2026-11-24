@@ -79,6 +79,7 @@ model usuario {
 }
 
 model orgao_publico {
+  obrasResponsaveis projeto_obra[]
   id         Int              @id @default(autoincrement())
   nome       String           @db.VarChar(45)
   sigla      String           @db.VarChar(45)
@@ -117,6 +118,8 @@ model emenda_parlamentar {
 }
 
 model projeto_obra {
+  orgaoResponsavelId Int?
+  orgaoResponsavel orgao_publico? @relation(fields: [orgaoResponsavelId], references: [id], onDelete: Restrict)
   dataConclusao DateTime?             @db.Date
   publicado     Boolean               @default(false)
   id            Int                   @id @default(autoincrement())
@@ -135,6 +138,7 @@ model projeto_obra {
   projetosVerba projeto_verba[]
 
   @@index([enderecoId], map: "projeto_obra_enderecoId_fkey")
+  @@index([orgaoResponsavelId])
 }
 
 model projeto_verba {

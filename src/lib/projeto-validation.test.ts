@@ -5,6 +5,13 @@ import {
 } from "./projeto-validation";
 
 describe("project request validation", () => {
+  it("valida o vínculo opcional com o órgão responsável", () => {
+    expect(parseUpdateProjetoInput({ orgaoResponsavelId: 2 })).toMatchObject({
+      success: true, data: { orgaoResponsavelId: 2 },
+    });
+    expect(parseUpdateProjetoInput({ orgaoResponsavelId: null })).toMatchObject({ success: true });
+    expect(parseUpdateProjetoInput({ orgaoResponsavelId: "2" })).toMatchObject({ success: false });
+  });
   const validProject = {
     nome: "Obra de mobilidade",
     descricao: "Implantação de melhorias viárias",

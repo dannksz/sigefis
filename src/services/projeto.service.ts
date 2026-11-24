@@ -3,6 +3,7 @@ import { EnderecoRepository } from "@/repositories/endereco.repository";
 import { CidadeRepository } from "@/repositories/cidade.repository";
 import { EstadoRepository } from "@/repositories/estado.repository";
 import { ProjetoRepository } from "@/repositories/projeto.repository";
+import { OrgaoPublicoRepository } from "@/repositories/orgao-publico.repository";
 import type {
   CreateProjetoDTO,
   ProjetoResponseDTO,
@@ -10,6 +11,13 @@ import type {
 } from "@/types/projeto";
 
 export class ProjetoService {
+  private orgaos = new OrgaoPublicoRepository();
+
+  private async ensureOrgaoExists(id?: number | null) {
+    if (id != null && !(await this.orgaos.findById(id))) {
+      throw new Error("Órgão responsável não encontrado.");
+    }
+  }
   private projetoRepository: ProjetoRepository;
   private enderecoRepository: EnderecoRepository;
   private cidadeRepository: CidadeRepository;
@@ -31,6 +39,7 @@ export class ProjetoService {
   }
 
   async create(data: CreateProjetoDTO): Promise<ProjetoResponseDTO> {
+    await this.ensureOrgaoExists(data.orgaoResponsavelId);
     if (data.enderecoId !== undefined) {
       await this.ensureEnderecoExists(data.enderecoId);
     } else if (data.endereco.cidadeId !== undefined) {
@@ -61,7 +70,12 @@ export class ProjetoService {
     id: number,
     data: UpdateProjetoDTO,
   ): Promise<ProjetoResponseDTO> {
-    await this.findById(id);
+    const projeto = await this.findById(id);
+    const orgaoId = data.orgaoResponsavelId === undefined ? projeto.orgaoResponsavelId : data.orgaoResponsavelId;
+    if ((data.publicado === true || (projeto.publicado && data.publicado !== false && data.orgaoResponsavelId === null)) && orgaoId == null) {
+      throw new Error("Uma obra publicada precisa de um órgão responsável.");
+    }
+    await this.ensureOrgaoExists(data.orgaoResponsavelId);
 
     if (data.enderecoId !== undefined) {
       await this.ensureEnderecoExists(data.enderecoId);

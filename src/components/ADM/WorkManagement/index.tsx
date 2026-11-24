@@ -1,6 +1,7 @@
 "use client";
 
-import { Eye, FileText, Landmark, MapPin, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { FileText, Landmark, MapPin, Plus, Search, X } from "lucide-react";
+import TableAction from "@/components/ADM/TableAction";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useSyncExternalStore } from "react";
@@ -91,7 +92,16 @@ export default function WorkManagement() {
     { key: "localizacao", header: "Localização", render: locationLabel },
     { key: "dataConclusao", header: "Conclusão prevista", render: (work) => formatDate(work.dataConclusao) },
     { key: "publicado", header: "Publicação", align: "center", render: (work) => <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${work.publicado ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{work.publicado ? "Publicada" : "Não publicada"}</span> },
-    { key: "actions", header: "Ações", align: "center", render: (work) => <div className="flex items-center justify-center gap-2"><button type="button" onClick={() => setSelected(work)} aria-label={`Ver detalhes de ${work.nome}`} title="Ver detalhes" className="grid size-9 cursor-pointer place-items-center rounded-md text-blue-700 transition-colors hover:bg-blue-50"><Eye className="size-5" aria-hidden="true" /></button>{role !== "FISCAL" && <Link href={`/adm/obras/${work.id}/alterar`} aria-label={`Alterar ${work.nome}`} title="Alterar obra" className="grid size-9 cursor-pointer place-items-center rounded-md text-amber-700 transition-colors hover:bg-amber-50"><Pencil className="size-5" aria-hidden="true" /></Link>}{role === "ADMIN" && <button type="button" onClick={() => setDeleting(work)} aria-label={`Excluir ${work.nome}`} title="Excluir obra" className="grid size-9 cursor-pointer place-items-center rounded-md text-red-600 transition-colors hover:bg-red-50"><Trash2 className="size-5" aria-hidden="true" /></button>}</div> },
+    {
+      key: "actions", header: "Ações", align: "center",
+      render: (work) => (
+        <div className="flex items-center justify-center gap-2">
+          <TableAction action="details" name={work.nome} onClick={() => setSelected(work)} />
+          {role !== "FISCAL" && <TableAction action="edit" name={work.nome} href={`/adm/obras/${work.id}/alterar`} />}
+          {role === "ADMIN" && <TableAction action="delete" name={work.nome} onClick={() => setDeleting(work)} />}
+        </div>
+      ),
+    },
   ];
 
   return (

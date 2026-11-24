@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import AdminTemplate from "@/templates/AdminTemplate";
+import type { OrgaoPublicoResponseDTO } from "@/types/orgao-publico";
+import { consultarCep } from "@/services/cep.service";
+import { formatCep } from "@/lib/input-masks";
 import type { CidadeResponseDTO } from "@/types/cidade";
 import type { EnderecoResponseDTO } from "@/types/endereco";
 import type { EstadoResponseDTO } from "@/types/estado";
@@ -14,8 +17,6 @@ import type { UserRole } from "@/types/user";
 type Auth = { user: { id: number; nome: string; email: string; role: UserRole }; token: string };
 type WorkForm = { nome: string; finalidade: string; descricao: string; dataConclusao: string };
 type AddressForm = { estadoId: string; cidade: string; cep: string; logradouro: string; numero: string; bairro: string; complemento: string };
-type CepResult = { cep: string; logradouro: string; complemento: string; bairro: string; cidade: string; uf: string };
-type ViaCepResult = { erro?: boolean | "true"; cep?: string; logradouro?: string; complemento?: string; bairro?: string; localidade?: string; uf?: string };
 
 function subscribe(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -59,15 +60,14 @@ async function fetchAll<T>(path: string, token: string) {
   }
   return items;
 }
-function formatCep(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
-}
 export default function AddWork({ workId }: { workId?: number }) {
   const router = useRouter();
   const authValue = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const auth = useMemo(() => parseAuth(authValue), [authValue]);
   const [states, setStates] = useState<EstadoResponseDTO[]>([]);
+  const [orgaos, setOrgaos] = useState<OrgaoPublicoResponseDTO[]>([]);
+  const [orgaoId, setOrgaoId] = useState("");
+  const [publication, setPublication] = useState<{ current: boolean; initial: boolean; hadAgency: boolean }>();
   const [work, setWork] = useState<WorkForm>({ nome: "", finalidade: "", descricao: "", dataConclusao: "" });
   const [address, setAddress] = useState<AddressForm>({ estadoId: "", cidade: "", cep: "", logradouro: "", numero: "", bairro: "", complemento: "" });
   const [loadingLocations, setLoadingLocations] = useState(true);
@@ -92,18 +92,24 @@ export default function AddWork({ workId }: { workId?: number }) {
     if (auth.user.role === "FISCAL") { router.replace("/adm/obras"); return; }
     let active = true;
     const load = async () => {
-      const stateItems = await fetchAll<EstadoResponseDTO>("/api/estados", auth.token);
-      if (!workId) return { stateItems };
+      const [stateItems, orgaoItems] = await Promise.all([
+        fetchAll<EstadoResponseDTO>("/api/estados", auth.token),
+        fetchAll<OrgaoPublicoResponseDTO>("/api/orgaos", auth.token),
+      ]);
+      if (!workId) return { stateItems, orgaoItems };
       const project = await requestJson<ProjetoResponseDTO>(`/api/projetos/${workId}`, auth.token);
       const projectAddress = await requestJson<EnderecoResponseDTO>(`/api/enderecos/${project.enderecoId}`, auth.token);
       const city = await requestJson<CidadeResponseDTO>(`/api/cidades/${projectAddress.cidadeId}`, auth.token);
-      return { stateItems, project, projectAddress, city };
+      return { stateItems, orgaoItems, project, projectAddress, city };
     };
     load()
-      .then(({ stateItems, project, projectAddress, city }) => {
+      .then(({ stateItems, orgaoItems, project, projectAddress, city }) => {
         if (!active) return;
+        setOrgaos(orgaoItems.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
         setStates(stateItems.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
         if (project && projectAddress && city) {
+          setOrgaoId(project.orgaoResponsavelId?.toString() ?? "");
+          setPublication({ current: project.publicado, initial: project.publicado, hadAgency: project.orgaoResponsavelId != null });
           setWork({ nome: project.nome, finalidade: project.finalidade, descricao: project.descricao, dataConclusao: project.dataConclusao ?? "" });
           setAddress({
             estadoId: String(city.estadoId),
@@ -134,24 +140,9 @@ export default function AddWork({ workId }: { workId?: number }) {
     const timeout = window.setTimeout(() => {
       setLookingUpCep(true);
       setCepMessage("Consultando CEP...");
-      fetch(`https://viacep.com.br/ws/${cep}/json/`, {
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          if (!response.ok) throw new Error("Não foi possível consultar o CEP.");
-          const data = await response.json() as ViaCepResult;
-          if (data.erro === true || data.erro === "true") throw new Error("CEP não encontrado.");
-          return {
-            cep: data.cep ?? cep,
-            logradouro: data.logradouro ?? "",
-            complemento: data.complemento ?? "",
-            bairro: data.bairro ?? "",
-            cidade: data.localidade ?? "",
-            uf: data.uf ?? "",
-          } satisfies CepResult;
-        })
+      consultarCep(cep, controller.signal)
         .then((result) => {
+          if (controller.signal.aborted) return;
           const state = states.find((item) => item.sigla.toUpperCase() === result.uf.toUpperCase());
           setAddress((current) => current.cep.replace(/\D/g, "") !== cep ? current : {
             ...current,
@@ -168,10 +159,12 @@ export default function AddWork({ workId }: { workId?: number }) {
           );
         })
         .catch((reason: unknown) => {
-          if (reason instanceof DOMException && reason.name === "AbortError") return;
+          if (controller.signal.aborted) return;
           setCepMessage(reason instanceof Error ? `${reason.message} Preencha manualmente.` : "Não foi possível consultar o CEP. Preencha manualmente.");
         })
-        .finally(() => setLookingUpCep(false));
+        .finally(() => {
+          if (!controller.signal.aborted) setLookingUpCep(false);
+        });
     }, 450);
     return () => {
       window.clearTimeout(timeout);
@@ -188,6 +181,10 @@ export default function AddWork({ workId }: { workId?: number }) {
       await requestJson<ProjetoResponseDTO>(isEditing ? `/api/projetos/${workId}` : "/api/projetos", auth.token, {
         method: isEditing ? "PUT" : "POST",
         body: JSON.stringify({
+          ...((orgaoId || !publication?.initial || publication.hadAgency || !publication.current) && {
+            orgaoResponsavelId: orgaoId ? Number(orgaoId) : null,
+          }),
+          ...(auth.user.role === "ADMIN" && publication && publication.current !== publication.initial && { publicado: publication.current }),
           nome: work.nome.trim(),
           finalidade: work.finalidade.trim(),
           descricao: work.descricao.trim(),
@@ -231,6 +228,24 @@ export default function AddWork({ workId }: { workId?: number }) {
             </div>
           </section>
 
+          <section className="mt-9 border-t border-[#d8dce5] pt-8">
+            <h2 className="mb-4 text-xl font-bold">Órgão responsável</h2>
+            <label className="block text-sm font-medium">Órgão público
+              <select className={fieldClass} value={orgaoId} onChange={(event) => setOrgaoId(event.target.value)}
+                disabled={saving || loadingLocations} required={publication?.current && (!publication.initial || publication.hadAgency)}>
+                <option value="">Sem órgão vinculado</option>
+                {orgaos.map((orgao) => <option key={orgao.id} value={orgao.id}>{orgao.nome} ({orgao.sigla})</option>)}
+              </select>
+            </label>
+            <p className="mt-2 text-sm text-gray-600">Obrigatório para publicar a obra.</p>
+            {role === "ADMIN" && publication && (
+              <label className="mt-4 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={publication.current} disabled={saving}
+                  onChange={(event) => setPublication({ ...publication, current: event.target.checked })} />
+                Publicar obra no portal
+              </label>
+            )}
+          </section>
           <section className="mt-9 border-t border-[#d8dce5] pt-8" aria-labelledby="location-title">
             <h2 id="location-title" className="mb-6 flex items-center gap-2 text-xl font-bold"><MapPin className="size-5 text-blue-800" aria-hidden="true" /> Localização completa</h2>
             <div className="grid gap-6 md:grid-cols-2">

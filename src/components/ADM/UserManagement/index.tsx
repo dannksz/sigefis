@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarDays, IdCard, Mail, MapPin, Search, UserCog, Users, X } from "lucide-react";
+import TableAction from "@/components/ADM/TableAction";
 import { useRouter } from "next/navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import AdminTable, { type Column } from "@/components/ADM/AdminTable";
@@ -98,7 +99,7 @@ export default function UserManagement() {
     { key: "email", header: "E-mail" },
     { key: "role", header: "Cargo", render: (user) => <select aria-label={`Alterar cargo de ${user.nome}`} value={user.role} disabled={savingId === user.id || user.id === auth.user.id} onChange={(event) => changeRole(user, event.target.value as UserRole)} title={user.id === auth.user.id ? "Seu próprio cargo não pode ser alterado nesta tela." : undefined} className="min-h-9 cursor-pointer rounded-md border border-[#b8beca] bg-white px-2 outline-none focus:border-primary-dark focus:ring-2 focus:ring-primary/40 disabled:cursor-not-allowed disabled:bg-[#eeeeee]">{roles.map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}</select> },
     { key: "criadoEm", header: "Data de ingresso", render: (user) => formatDate(user.criadoEm) },
-    { key: "actions", header: "Ações", align: "center", render: (user) => <button type="button" onClick={() => openDetails(user)} className="cursor-pointer rounded-md bg-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-secondary-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-dark">Ver detalhes</button> },
+    { key: "actions", header: "Ações", align: "center", render: (user) => <TableAction action="details" name={user.nome} onClick={() => openDetails(user)} /> },
   ];
 
   return (

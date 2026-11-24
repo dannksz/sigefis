@@ -8,6 +8,7 @@ export type CreateProjetoEnderecoDTO =
     });
 
 interface CreateProjetoBaseDTO {
+  orgaoResponsavelId?: number | null;
   dataConclusao?: string | null;
   nome: string;
   descricao: string;
@@ -21,6 +22,7 @@ export type CreateProjetoDTO = CreateProjetoBaseDTO &
   );
 
 export interface UpdateProjetoDTO {
+  orgaoResponsavelId?: number | null;
   dataConclusao?: string | null;
   publicado?: boolean;
   nome?: string;
@@ -31,6 +33,7 @@ export interface UpdateProjetoDTO {
 }
 
 export interface ProjetoResponseDTO {
+  orgaoResponsavelId: number | null;
   dataConclusao: string | null;
   publicado: boolean;
   id: number;

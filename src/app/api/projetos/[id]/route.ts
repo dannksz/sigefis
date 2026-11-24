@@ -87,7 +87,13 @@ export async function PUT(request: Request, { params }: Params) {
     await auditRequestSuccess(request, "ATUALIZAR_PROJETO", projeto.id ?? id);
     return NextResponse.json(projeto, { status: 200 });
   } catch (error: unknown) {
-    if (isProjetoNotFound(error) || isEnderecoNotFound(error)) {
+    if (error instanceof Error && error.message === "Uma obra publicada precisa de um órgão responsável.") {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return NextResponse.json({ error: "O cadastro mudou durante a edição. Recarregue e tente novamente." }, { status: 409 });
+    }
+    if (isProjetoNotFound(error) || isEnderecoNotFound(error) || (error instanceof Error && error.message === "Órgão responsável não encontrado.")) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 

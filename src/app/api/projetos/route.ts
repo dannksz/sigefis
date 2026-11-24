@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     await auditRequestSuccess(request, "CRIAR_PROJETO", projeto.id);
     return NextResponse.json(projeto, { status: 201 });
   } catch (error: unknown) {
-    if (isLocationNotFound(error)) {
+    if (isLocationNotFound(error) || (error instanceof Error && error.message === "Órgão responsável não encontrado.")) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 

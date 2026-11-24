@@ -10,7 +10,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function hasOnlyFields(value: Record<string, unknown>, update = false): boolean {
-  const allowedFields = ["nome", "descricao", "finalidade", "enderecoId", "dataConclusao"];
+  const allowedFields = ["nome", "descricao", "finalidade", "enderecoId", "dataConclusao", "orgaoResponsavelId"];
   return Object.keys(value).every(
     (key) => allowedFields.includes(key) || key === "endereco" || (update && key === "publicado"),
   );
@@ -122,7 +122,12 @@ export function parseCreateProjetoInput(
     return { success: false, error: "Informe uma data de conclusão válida em YYYY-MM-DD ou null." };
   }
 
+  const orgaoResponsavelId = value.orgaoResponsavelId;
+  if (orgaoResponsavelId != null && !isValidEnderecoId(orgaoResponsavelId)) {
+    return { success: false, error: "Informe um órgão responsável válido." };
+  }
   const base = {
+    ...(orgaoResponsavelId !== undefined && { orgaoResponsavelId }),
     nome: value.nome.trim(),
     descricao: value.descricao.trim(),
     finalidade: value.finalidade.trim(),
@@ -151,6 +156,13 @@ export function parseUpdateProjetoInput(
   }
 
   const data: Partial<UpdateProjetoDTO> = {};
+  if ("orgaoResponsavelId" in value) {
+    const id = value.orgaoResponsavelId;
+    if (id !== null && !isValidEnderecoId(id)) {
+      return { success: false, error: "Informe um órgão responsável válido." };
+    }
+    data.orgaoResponsavelId = id;
+  }
   if ("endereco" in value) {
     if ("enderecoId" in value) {
       return { success: false, error: "Informe o endereço completo ou um endereço cadastrado, não ambos." };

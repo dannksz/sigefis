@@ -27,6 +27,7 @@ function toResponseDTO(projeto: projeto_obra): ProjetoResponseDTO {
     id: projeto.id,
     dataConclusao: projeto.dataConclusao?.toISOString().slice(0, 10) ?? null,
     publicado: projeto.publicado,
+    orgaoResponsavelId: projeto.orgaoResponsavelId,
     nome: projeto.nome,
     descricao: projeto.descricao,
     finalidade: projeto.finalidade,
@@ -43,8 +44,11 @@ export class ProjetoRepository {
         descricao: data.descricao,
         finalidade: data.finalidade,
         ...(data.enderecoId !== undefined
-          ? { enderecoId: data.enderecoId }
-          : { endereco: { create: nestedAddress! } }),
+          ? { enderecoId: data.enderecoId, orgaoResponsavelId: data.orgaoResponsavelId }
+          : {
+              endereco: { create: nestedAddress! },
+              ...(data.orgaoResponsavelId && { orgaoResponsavel: { connect: { id: data.orgaoResponsavelId } } }),
+            }),
         dataConclusao: data.dataConclusao ? new Date(`${data.dataConclusao}T00:00:00.000Z`) : null,
       },
     });
@@ -94,14 +98,24 @@ export class ProjetoRepository {
         dataConclusao: data.dataConclusao === null ? null : new Date(`${data.dataConclusao}T00:00:00.000Z`),
       }),
     };
+    const orgaoId = data.orgaoResponsavelId;
+    const where = {
+      id,
+      ...(data.publicado === true && orgaoId === undefined && { orgaoResponsavelId: { not: null } }),
+      ...(orgaoId === null && data.publicado !== false && { publicado: false }),
+    };
     const projeto = data.endereco !== undefined
       ? await prisma.projeto_obra.update({
-          where: { id },
-          data: { ...scalarData, endereco: { update: nestedAddressData(data.endereco) } },
+          where,
+          data: {
+            ...scalarData,
+            endereco: { update: nestedAddressData(data.endereco) },
+            ...(orgaoId !== undefined && { orgaoResponsavel: orgaoId === null ? { disconnect: true } : { connect: { id: orgaoId } } }),
+          },
         })
       : await prisma.projeto_obra.update({
-          where: { id },
-          data: { ...scalarData, ...(data.enderecoId !== undefined && { enderecoId: data.enderecoId }) },
+          where,
+          data: { ...scalarData, orgaoResponsavelId: orgaoId, ...(data.enderecoId !== undefined && { enderecoId: data.enderecoId }) },
         });
 
     return toResponseDTO(projeto);

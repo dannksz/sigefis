@@ -142,7 +142,7 @@ export async function DELETE(_request: Request, { params }: Params) {
       return NextResponse.json(
         {
           error:
-            "Não é possível excluir um órgão público que possui verbas ou contas bancárias associadas.",
+            "Não é possível excluir um órgão público vinculado a obras, verbas ou contas bancárias.",
         },
         { status: 409 },
       );

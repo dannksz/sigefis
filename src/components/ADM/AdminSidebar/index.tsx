@@ -14,7 +14,7 @@ const menuItems: MenuItem[] = [
   { name: "Dashboard", icon: Gauge, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm" },
   { name: "Usuários e perfis", icon: Users, roles: ["ADMIN"], href: "/adm/usuarios" },
   { name: "Obras públicas", icon: Landmark, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/obras" },
-  { name: "Órgãos e empresas", icon: Building2, roles: ["ADMIN", "GESTOR"] },
+  { name: "Órgãos e empresas", icon: Building2, roles: ["ADMIN", "GESTOR"], href: "/adm/orgaos-empresas" },
   { name: "Contratos", icon: BriefcaseBusiness, roles: ["ADMIN", "GESTOR"] },
   { name: "Cronograma", icon: ClipboardCheck, roles: ["ADMIN", "GESTOR", "FISCAL"] },
   { name: "Verbas e emendas", icon: WalletCards, roles: ["ADMIN", "GESTOR"] },
