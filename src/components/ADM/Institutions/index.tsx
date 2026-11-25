@@ -307,6 +307,7 @@ function InstitutionForm({ token, initial }: { token: string; initial?: Institut
       router.push("/adm/orgaos-empresas");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Não foi possível salvar o cadastro.");
+    } finally {
       setSaving(false);
     }
   }
@@ -451,6 +452,7 @@ function NewInstitutionAddress({ token, onCancel, onSaved }: {
       onSaved(saved);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Não foi possível salvar o endereço.");
+    } finally {
       setSaving(false);
     }
   }

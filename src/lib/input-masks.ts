@@ -1,3 +1,11 @@
+export function formatBrlInput(value: string) {
+  const digits = value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 12);
+  if (!digits) return "";
+  const padded = digits.padStart(3, "0");
+  const reais = padded.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${reais},${padded.slice(-2)}`;
+}
+
 export function formatCnpj(value: string) {
   return value.replace(/\D/g, "").slice(0, 14)
     .replace(/^(\d{2})(\d)/, "$1.$2")

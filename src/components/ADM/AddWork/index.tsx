@@ -202,6 +202,7 @@ export default function AddWork({ workId }: { workId?: number }) {
       router.push("/adm/obras");
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : `Erro ao ${isEditing ? "alterar" : "cadastrar"} obra.`);
+    } finally {
       setSaving(false);
     }
   }

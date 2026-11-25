@@ -1,4 +1,5 @@
 import { parseListQuery } from "@/lib/pagination";
+import { ContratoBudgetError } from "@/lib/contrato-budget-error";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
@@ -61,6 +62,10 @@ export async function POST(request: Request) {
     await auditRequestSuccess(request, "CRIAR_CONTRATO", contrato.id);
     return NextResponse.json(contrato, { status: 201 });
   } catch (error: unknown) {
+    if (error instanceof ContratoBudgetError) return NextResponse.json({ error: error.message }, { status: 409 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return NextResponse.json({ error: "A verba está sendo atualizada. Tente salvar novamente." }, { status: 409 });
+    }
     if (isReferenceNotFound(error)) {
       return NextResponse.json(
         { error: error.message },

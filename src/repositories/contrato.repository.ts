@@ -1,5 +1,7 @@
 import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { contrato } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { ContratoBudgetError } from "@/lib/contrato-budget-error";
 import prisma from "@/lib/prisma";
 import type {
   ContratoResponseDTO,
@@ -25,9 +27,22 @@ function toDate(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
 }
 
+async function ensureBudget(tx: Prisma.TransactionClient, verbaPublicaId: number, valor: string | Prisma.Decimal, id?: number) {
+  const verba = await tx.verba_publica.findUnique({ where: { id: verbaPublicaId }, select: { valor: true } });
+  if (!verba) throw new Error("Verba pública não encontrada.");
+  const committed = await tx.contrato.aggregate({
+    where: { verbaPublicaId, ...(id !== undefined && { id: { not: id } }) },
+    _sum: { valorContrato: true },
+  });
+  const available = Prisma.Decimal.max(0, verba.valor.minus(committed._sum.valorContrato ?? 0));
+  if (available.lessThan(valor)) throw new ContratoBudgetError(available.toNumber());
+}
+
 export class ContratoRepository {
   async create(data: CreateContratoDTO): Promise<ContratoResponseDTO> {
-    const contrato = await prisma.contrato.create({
+    const contrato = await prisma.$transaction(async (tx) => {
+      await ensureBudget(tx, data.verbaPublicaId, data.valorContrato);
+      return tx.contrato.create({
       data: {
         numeroContrato: data.numeroContrato,
         valorContrato: data.valorContrato,
@@ -38,7 +53,8 @@ export class ContratoRepository {
         empresaId: data.empresaId,
         verbaPublicaId: data.verbaPublicaId,
       },
-    });
+      });
+    }, { isolationLevel: "Serializable" });
 
     return toResponseDTO(contrato);
   }
@@ -70,7 +86,15 @@ export class ContratoRepository {
     id: number,
     data: UpdateContratoDTO,
   ): Promise<ContratoResponseDTO> {
-    const contrato = await prisma.contrato.update({
+    const contrato = await prisma.$transaction(async (tx) => {
+      const current = await tx.contrato.findUnique({ where: { id } });
+      if (!current) throw new Error("Contrato não encontrado.");
+      const fundId = data.verbaPublicaId ?? current.verbaPublicaId;
+      const amount = data.valorContrato ?? current.valorContrato;
+      if (fundId !== current.verbaPublicaId || !current.valorContrato.equals(amount)) {
+        await ensureBudget(tx, fundId, amount, id);
+      }
+      return tx.contrato.update({
       where: { id },
       data: {
         ...(data.numeroContrato !== undefined && {
@@ -96,7 +120,8 @@ export class ContratoRepository {
           verbaPublicaId: data.verbaPublicaId,
         }),
       },
-    });
+      });
+    }, { isolationLevel: "Serializable" });
 
     return toResponseDTO(contrato);
   }
