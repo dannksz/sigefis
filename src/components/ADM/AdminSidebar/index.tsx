@@ -16,7 +16,7 @@ const menuItems: MenuItem[] = [
   { name: "Obras públicas", icon: Landmark, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/obras" },
   { name: "Órgãos e empresas", icon: Building2, roles: ["ADMIN", "GESTOR"], href: "/adm/orgaos-empresas" },
   { name: "Contratos", icon: BriefcaseBusiness, roles: ["ADMIN", "GESTOR"], href: "/adm/contratos" },
-  { name: "Cronograma", icon: ClipboardCheck, roles: ["ADMIN", "GESTOR", "FISCAL"] },
+  { name: "Cronograma", icon: ClipboardCheck, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/cronograma" },
   { name: "Verbas e emendas", icon: WalletCards, roles: ["ADMIN", "GESTOR"], href: "/adm/verbas" },
   { name: "Financeiro", icon: Banknote, roles: ["ADMIN", "GESTOR"] },
   { name: "Fiscalizações", icon: FileSearch, roles: ["ADMIN", "FISCAL"] },
