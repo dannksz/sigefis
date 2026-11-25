@@ -5,6 +5,7 @@ import { formatBrlInput } from "@/lib/input-masks";
 import type { ContratoResponseDTO, CreateContratoDTO } from "@/types/contrato";
 import type { PaginatedResult } from "@/lib/pagination";
 import type { VerbaPublicaResponseDTO } from "@/types/verba-publica";
+import type { ProjetoVerbaResponseDTO } from "@/types/projeto-verba";
 
 type NamedRecord = { id: number; nome: string };
 type Option = { id: number; label: string };
@@ -43,8 +44,10 @@ export default function ContractForm({ token, id }: { token: string; id?: number
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [fundId, setFundId] = useState("");
+  const [workId, setWorkId] = useState("");
   const [amount, setAmount] = useState("");
-  const [budget, setBudget] = useState<{ fundId: string; committed: number; previous: number } | { fundId: string; error: true }>();
+  const [budget, setBudget] = useState<{ key: string; allocated: number; committed: number; previous: number; globalAvailable: number } | { key: string; error: true }>();
+  const budgetKey = `${workId}/${fundId}`;
   const path = id === undefined ? "contratos" : `contratos/${id}`;
 
   useEffect(() => {
@@ -59,6 +62,7 @@ export default function ContractForm({ token, id }: { token: string; id?: number
       if (!signal.aborted) {
         setData({ works, companies, funds, contract });
         setFundId(contract?.verbaPublicaId.toString() ?? "");
+        setWorkId(contract?.projetoObraId.toString() ?? "");
         setAmount(contract ? formatBrlInput(Number(contract.valorContrato).toFixed(2)) : "");
       }
     }).catch((reason: unknown) => {
@@ -68,23 +72,31 @@ export default function ContractForm({ token, id }: { token: string; id?: number
   }, [id, path, token]);
 
   useEffect(() => {
-    if (!fundId) return;
+    if (!fundId || !workId) return;
     const controller = new AbortController();
-    listAll<ContratoResponseDTO>(`contratos?verbaPublicaId=${encodeURIComponent(fundId)}`, token, controller.signal)
-      .then((contracts) => {
+    const filter = new URLSearchParams({ verbaPublicaId: fundId });
+    Promise.all([
+      listAll<ContratoResponseDTO>(`contratos?${filter}`, token, controller.signal),
+      listAll<ProjetoVerbaResponseDTO>(`projetos-verbas?${filter}&projetoObraId=${encodeURIComponent(workId)}`, token, controller.signal),
+      request<VerbaPublicaResponseDTO>(`verbas-publicas/${encodeURIComponent(fundId)}`, token, { signal: controller.signal }),
+    ]).then(([contracts, allocations, fund]) => {
         if (controller.signal.aborted) return;
         const cents = (contract: ContratoResponseDTO) => Math.round(Number(contract.valorContrato) * 100);
+        const workContracts = contracts.filter((item) => String(item.projetoObraId) === workId);
         setBudget({
-          fundId,
-          committed: contracts.reduce((total, item) => total + cents(item), 0),
-          previous: contracts.reduce((total, item) => item.id === id ? total + cents(item) : total, 0),
+          key: budgetKey,
+          allocated: allocations.reduce((total, item) => total + Math.round(Number(item.valorAlocado) * 100), 0),
+          committed: workContracts.reduce((total, item) => total + cents(item), 0),
+          previous: workContracts.reduce((total, item) => item.id === id ? total + cents(item) : total, 0),
+          globalAvailable: Math.round(Number(fund.valor) * 100) -
+            contracts.reduce((total, item) => item.id === id ? total : total + cents(item), 0),
         });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setBudget({ fundId, error: true });
+        if (!controller.signal.aborted) setBudget({ key: budgetKey, error: true });
       });
     return () => controller.abort();
-  }, [fundId, id, token]);
+  }, [budgetKey, fundId, workId, id, token]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -131,7 +143,7 @@ export default function ContractForm({ token, id }: { token: string; id?: number
             <label>Data de assinatura<input name="dataAssinatura" className={field} type="date" required defaultValue={contract?.dataAssinatura.slice(0, 10)} /></label>
             <label>Início da vigência<input name="dataInicio" className={field} type="date" required defaultValue={contract?.dataInicio.slice(0, 10)} /></label>
             <label>Fim da vigência<input name="dataFim" className={field} type="date" required defaultValue={contract?.dataFim.slice(0, 10)} /></label>
-            <ReferenceSelect name="projetoObraId" label="Obra" selected={contract?.projetoObraId}
+            <ReferenceSelect name="projetoObraId" label="Obra" value={workId} onChange={setWorkId}
               options={data.works.map(({ id, nome }) => ({ id, label: nome }))} />
             <ReferenceSelect name="empresaId" label="Empresa contratada" selected={contract?.empresaId}
               options={data.companies.map(({ id, nome }) => ({ id, label: nome }))} />
@@ -140,12 +152,11 @@ export default function ContractForm({ token, id }: { token: string; id?: number
                 id: fund.id, label: `${fund.finalidade} · ${fund.origem} · ${currency.format(Number(fund.valor))}`,
               }))} />
           </fieldset>
-          {fund && (
+          {fund && workId && (
             <section aria-label="Resumo da verba" aria-live="polite" className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
-              {budget?.fundId !== fundId ? <p>Consultando saldo da verba...</p> :
+              {budget?.key !== budgetKey ? <p>Consultando cobertura da obra...</p> :
                 "error" in budget ? <p>Não foi possível consultar o saldo agora.</p> :
-                <BudgetSummary total={Math.round(Number(fund.valor) * 100)} committed={budget.committed}
-                  previous={budget.previous} proposed={amount ? Number(amount.replace(/\D/g, "")) : undefined} />}
+                <BudgetSummary {...budget} proposed={amount ? Number(amount.replace(/\D/g, "")) : undefined} />}
             </section>
           )}
           {missingOptions && <p className="mt-4 text-sm text-amber-800">Cadastre uma obra, uma empresa e uma verba pública para poder salvar o contrato.</p>}
@@ -162,16 +173,17 @@ export default function ContractForm({ token, id }: { token: string; id?: number
   );
 }
 
-function BudgetSummary({ total, committed, previous, proposed }: {
-  total: number; committed: number; previous: number; proposed?: number;
+function BudgetSummary({ allocated, committed, previous, globalAvailable, proposed }: {
+  allocated: number; committed: number; previous: number; globalAvailable: number; proposed?: number;
 }) {
-  const projected = proposed === undefined ? undefined : total - committed + previous - proposed;
+  const limit = Math.max(0, Math.min(allocated - committed + previous, globalAvailable));
+  const projected = proposed === undefined ? undefined : limit - proposed;
   const money = (cents: number) => currency.format(cents / 100);
   return (
     <dl className="grid gap-3 text-sm sm:grid-cols-2">
-      <div><dt>Valor total da verba</dt><dd className="font-semibold">{money(total)}</dd></div>
-      <div><dt>Já comprometido</dt><dd className="font-semibold">{money(committed)}</dd></div>
-      <div><dt>Saldo atual</dt><dd className="font-semibold">{money(total - committed)}</dd></div>
+      <div><dt>Alocado à obra nesta verba</dt><dd className="font-semibold">{money(allocated)}</dd></div>
+      <div><dt>Comprometido nesta obra e verba</dt><dd className="font-semibold">{money(committed)}</dd></div>
+      <div><dt>Limite para este contrato</dt><dd className="font-semibold">{money(limit)}</dd></div>
       <div>
         <dt>Saldo previsto após salvar</dt>
         <dd className={projected !== undefined && projected < 0 ? "font-semibold text-red-800" : "font-semibold"}>

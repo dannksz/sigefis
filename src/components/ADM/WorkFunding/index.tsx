@@ -97,6 +97,20 @@ export default function WorkFunding({ workId, token }: { workId: number; token: 
 
   const allocated = data?.allocations.reduce((total, item) => total + cents(item.valorAlocado), 0) ?? 0;
   const committed = data?.contracts.reduce((total, item) => total + cents(item.valorContrato), 0) ?? 0;
+  const coverage = new Map<number, { allocated: number; committed: number }>();
+  for (const item of data?.allocations ?? []) {
+    const totals = coverage.get(item.verbaPublicaId) ?? { allocated: 0, committed: 0 };
+    totals.allocated += cents(item.valorAlocado);
+    coverage.set(item.verbaPublicaId, totals);
+  }
+  for (const item of data?.contracts ?? []) {
+    const totals = coverage.get(item.verbaPublicaId) ?? { allocated: 0, committed: 0 };
+    totals.committed += cents(item.valorContrato);
+    coverage.set(item.verbaPublicaId, totals);
+  }
+  const coverageRows = Array.from(coverage, ([id, totals]) => ({
+    id, name: data?.funds.find((fund) => fund.id === id)?.finalidade ?? `Verba #${id}`, ...totals,
+  }));
   return (
     <section aria-labelledby="work-funding-title" className="mt-8 rounded-xl bg-white p-6 shadow-sm md:p-8">
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -112,6 +126,23 @@ export default function WorkFunding({ workId, token }: { workId: number; token: 
             <div><dt>Alocado à obra</dt><dd className="font-semibold">{brl.format(allocated / 100)}</dd></div>
             <div><dt>Comprometido em contratos</dt><dd className="font-semibold">{brl.format(committed / 100)}</dd></div>
           </dl>
+          {coverageRows.length > 0 && (
+            <div className="mb-6">
+              <h3 className="mb-3 font-semibold">Cobertura por verba</h3>
+              <AdminTable data={coverageRows} keyExtractor={(item) => item.id} columns={[
+                { key: "name", header: "Verba" },
+                { key: "allocated", header: "Alocado", render: (item) => brl.format(item.allocated / 100) },
+                { key: "committed", header: "Comprometido", render: (item) => brl.format(item.committed / 100) },
+                { key: "balance", header: "Cobertura", render: (item) => {
+                  const balance = item.allocated - item.committed;
+                  return balance < 0
+                    ? <span className="font-semibold text-red-800">{brl.format(-balance / 100)} sem cobertura</span>
+                    : `${brl.format(balance / 100)} de saldo`;
+                } },
+              ]} />
+            </div>
+          )}
+          <h3 className="mb-3 font-semibold">Alocações registradas</h3>
           {!data.funds.length && <p className="mb-3">Cadastre uma verba pública para alocá-la à obra.</p>}
           {data.allocations.length ? <AdminTable data={data.allocations} keyExtractor={(item) => item.id} columns={[
             { key: "fund", header: "Verba", render: (item) => data.funds.find((fund) => fund.id === item.verbaPublicaId)?.finalidade ?? `Verba #${item.verbaPublicaId}` },
