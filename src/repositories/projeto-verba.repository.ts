@@ -32,6 +32,21 @@ async function validateAllocation(tx: Prisma.TransactionClient, verbaPublicaId: 
   }
 }
 
+async function ensureCoverage(tx: Prisma.TransactionClient, current: projeto_verba, replacement: string | Prisma.Decimal = "0") {
+  const pair = { projetoObraId: current.projetoObraId, verbaPublicaId: current.verbaPublicaId };
+  const committed = await tx.contrato.aggregate({ where: pair, _sum: { valorContrato: true } });
+  const other = await tx.projeto_verba.aggregate({
+    where: { ...pair, id: { not: current.id } },
+    _sum: { valorAlocado: true },
+  });
+  const remaining = new Prisma.Decimal(other._sum.valorAlocado ?? 0).plus(replacement);
+  const required = committed._sum.valorContrato ?? new Prisma.Decimal(0);
+  if (remaining.lessThan(required)) {
+    const formatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(required.toNumber());
+    throw new AllocationError(`Esta obra precisa manter pelo menos ${formatted} alocados nesta verba para cobrir seus contratos.`);
+  }
+}
+
 export class ProjetoVerbaRepository {
   async create(data: CreateProjetoVerbaDTO): Promise<ProjetoVerbaResponseDTO> {
     return prisma.$transaction(async (tx) => {
@@ -66,7 +81,13 @@ export class ProjetoVerbaRepository {
       const current = await tx.projeto_verba.findUnique({ where: { id } });
       if (!current) throw new Error("Vínculo projeto-verba não encontrado.");
       const fundId = data.verbaPublicaId ?? current.verbaPublicaId;
+      const workId = data.projetoObraId ?? current.projetoObraId;
       const amount = data.valorAlocado ?? current.valorAlocado;
+      if (fundId !== current.verbaPublicaId || workId !== current.projetoObraId) {
+        await ensureCoverage(tx, current);
+      } else if (current.valorAlocado.greaterThan(amount)) {
+        await ensureCoverage(tx, current, amount);
+      }
       if (fundId !== current.verbaPublicaId || !current.valorAlocado.equals(amount)) {
         await validateAllocation(tx, fundId, amount, id);
       }
@@ -75,6 +96,11 @@ export class ProjetoVerbaRepository {
   }
 
   async delete(id: number): Promise<void> {
-    await prisma.projeto_verba.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      const current = await tx.projeto_verba.findUnique({ where: { id } });
+      if (!current) throw new Error("Vínculo projeto-verba não encontrado.");
+      await ensureCoverage(tx, current);
+      await tx.projeto_verba.delete({ where: { id } });
+    }, { isolationLevel: "Serializable" });
   }
 }

@@ -58,6 +58,8 @@ export async function DELETE(_request: Request, { params }: Params) {
     await auditRequestSuccess(_request, "EXCLUIR_PROJETO_VERBA", id);
     return NextResponse.json({ message: "Vínculo projeto-verba excluído com sucesso." });
   } catch (error: unknown) {
+    const conflict = allocationConflict(error);
+    if (conflict) return conflict;
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
       return NextResponse.json({ error: "Não é possível excluir um vínculo associado a outros registros." }, { status: 409 });

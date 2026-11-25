@@ -27,7 +27,7 @@ function toDate(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
 }
 
-async function ensureBudget(tx: Prisma.TransactionClient, verbaPublicaId: number, valor: string | Prisma.Decimal, id?: number) {
+async function ensureBudget(tx: Prisma.TransactionClient, projetoObraId: number, verbaPublicaId: number, valor: string | Prisma.Decimal, id?: number) {
   const verba = await tx.verba_publica.findUnique({ where: { id: verbaPublicaId }, select: { valor: true } });
   if (!verba) throw new Error("Verba pública não encontrada.");
   const committed = await tx.contrato.aggregate({
@@ -36,12 +36,22 @@ async function ensureBudget(tx: Prisma.TransactionClient, verbaPublicaId: number
   });
   const available = Prisma.Decimal.max(0, verba.valor.minus(committed._sum.valorContrato ?? 0));
   if (available.lessThan(valor)) throw new ContratoBudgetError(available.toNumber());
+  const allocated = await tx.projeto_verba.aggregate({
+    where: { projetoObraId, verbaPublicaId },
+    _sum: { valorAlocado: true },
+  });
+  const workCommitted = await tx.contrato.aggregate({
+    where: { projetoObraId, verbaPublicaId, ...(id !== undefined && { id: { not: id } }) },
+    _sum: { valorContrato: true },
+  });
+  const coverage = Prisma.Decimal.max(0, new Prisma.Decimal(allocated._sum.valorAlocado ?? 0).minus(workCommitted._sum.valorContrato ?? 0));
+  if (coverage.lessThan(valor)) throw new ContratoBudgetError(coverage.toNumber(), "obra");
 }
 
 export class ContratoRepository {
   async create(data: CreateContratoDTO): Promise<ContratoResponseDTO> {
     const contrato = await prisma.$transaction(async (tx) => {
-      await ensureBudget(tx, data.verbaPublicaId, data.valorContrato);
+      await ensureBudget(tx, data.projetoObraId, data.verbaPublicaId, data.valorContrato);
       return tx.contrato.create({
       data: {
         numeroContrato: data.numeroContrato,
@@ -90,9 +100,10 @@ export class ContratoRepository {
       const current = await tx.contrato.findUnique({ where: { id } });
       if (!current) throw new Error("Contrato não encontrado.");
       const fundId = data.verbaPublicaId ?? current.verbaPublicaId;
+      const workId = data.projetoObraId ?? current.projetoObraId;
       const amount = data.valorContrato ?? current.valorContrato;
-      if (fundId !== current.verbaPublicaId || !current.valorContrato.equals(amount)) {
-        await ensureBudget(tx, fundId, amount, id);
+      if (workId !== current.projetoObraId || fundId !== current.verbaPublicaId || current.valorContrato.lessThan(amount)) {
+        await ensureBudget(tx, workId, fundId, amount, id);
       }
       return tx.contrato.update({
       where: { id },
