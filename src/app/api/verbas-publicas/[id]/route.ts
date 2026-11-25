@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { VerbaPublicaBudgetError } from "@/lib/verba-publica-budget-error";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
 import { VerbaPublicaService } from "@/services/verba-publica.service";
@@ -71,6 +72,12 @@ export async function PUT(request: Request, { params }: Params) {
   } catch (error: unknown) {
     if (isVerbaNotFound(error) || isOrgaoNotFound(error)) {
       return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (error instanceof VerbaPublicaBudgetError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return NextResponse.json({ error: "A verba está sendo atualizada. Tente salvar novamente." }, { status: 409 });
     }
     console.error("Erro ao atualizar verba pública:", error);
     return NextResponse.json(

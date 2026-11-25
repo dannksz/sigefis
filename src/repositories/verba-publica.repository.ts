@@ -1,5 +1,6 @@
 import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
-import type { verba_publica } from "@prisma/client";
+import { Prisma, type verba_publica } from "@prisma/client";
+import { VerbaPublicaBudgetError } from "@/lib/verba-publica-budget-error";
 import prisma from "@/lib/prisma";
 import type {
   CreateVerbaPublicaDTO,
@@ -52,10 +53,23 @@ export class VerbaPublicaRepository {
     id: number,
     data: UpdateVerbaPublicaDTO,
   ): Promise<VerbaPublicaResponseDTO> {
-    const verba = await prisma.verba_publica.update({
-      where: { id },
-      data,
-    });
+    const verba = await prisma.$transaction(async (tx) => {
+      if (data.valor !== undefined) {
+        const current = await tx.verba_publica.findUnique({
+          where: { id }, select: { valor: true },
+        });
+        if (!current) throw new Error("Verba pública não encontrada.");
+        if (current.valor.greaterThan(data.valor)) {
+          const { _sum } = await tx.contrato.aggregate({
+            where: { verbaPublicaId: id },
+            _sum: { valorContrato: true },
+          });
+          const committed = _sum.valorContrato ?? new Prisma.Decimal(0);
+          if (committed.greaterThan(data.valor)) throw new VerbaPublicaBudgetError(committed.toNumber());
+        }
+      }
+      return tx.verba_publica.update({ where: { id }, data });
+    }, { isolationLevel: "Serializable" });
 
     return toResponseDTO(verba);
   }

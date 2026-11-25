@@ -10,6 +10,7 @@ import TableAction from "@/components/ADM/TableAction";
 import AdminAction from "@/components/ADM/AdminAction";
 import Pagination from "@/components/Pagination";
 import ContractForm from "@/components/ADM/ContractForm";
+import FundingForm from "@/components/ADM/FundingForm";
 import type { PaginatedResult } from "@/lib/pagination";
 import type { ContratoResponseDTO } from "@/types/contrato";
 import type { VerbaPublicaResponseDTO } from "@/types/verba-publica";
@@ -92,11 +93,13 @@ async function request<T>(path: string, token: string, signal: AbortSignal): Pro
   return response.json();
 }
 
-export default function FinancialDirectory({ area, form }: { area: "contracts" | "funding"; form?: { id?: number } }) {
+export default function FinancialDirectory({ area, form, showAmendments }: {
+  area: "contracts" | "funding"; form?: { id?: number; amendment?: boolean }; showAmendments?: boolean;
+}) {
   const value = useSyncExternalStore(subscribe, snapshot, () => "");
   const session = readSession(value);
   const router = useRouter();
-  const [fundingSection, setFundingSection] = useState<Section>("verbas-publicas");
+  const [fundingSection, setFundingSection] = useState<Section>(showAmendments ? "emendas-parlamentares" : "verbas-publicas");
   const contracts = area === "contracts";
   const section = contracts ? "contratos" : fundingSection;
   const Icon = contracts ? BriefcaseBusiness : WalletCards;
@@ -115,10 +118,15 @@ export default function FinancialDirectory({ area, form }: { area: "contracts" |
       window.dispatchEvent(new Event("sigefis-auth"));
       router.replace("/");
     }}>
-      {form ? <ContractForm key={form.id ?? "new"} id={form.id} token={session.token} /> : <div className="mx-auto max-w-[1500px]">
+      {form ? (
+        contracts ? <ContractForm key={form.id ?? "new"} id={form.id} token={session.token} />
+          : <FundingForm key={`${form.amendment}-${form.id ?? "new"}`} id={form.id} token={session.token} amendment={form.amendment} />
+      ) : <div className="mx-auto max-w-[1500px]">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <h1 className="flex items-center gap-3 text-3xl font-bold"><Icon aria-hidden="true" />{contracts ? "Contratos" : "Verbas e emendas"}</h1>
           {contracts && <AdminAction variant="primary" href="/adm/contratos/adicionar">Adicionar contrato</AdminAction>}
+          {section === "verbas-publicas" && <AdminAction variant="primary" href="/adm/verbas/adicionar">Adicionar verba pública</AdminAction>}
+          {section === "emendas-parlamentares" && <AdminAction variant="primary" href="/adm/verbas/emendas/adicionar">Adicionar emenda</AdminAction>}
         </header>
         {!contracts && (
           <nav className="mb-5 flex flex-wrap gap-2" aria-label="Tipo de recurso">
@@ -173,6 +181,8 @@ function RecordList({ section, token }: { section: Section; token: string }) {
                   dialog.current?.showModal();
                 }} />
                 {section === "contratos" && <TableAction action="edit" name={row.title} href={`/adm/contratos/${row.id}/alterar`} />}
+                {section === "verbas-publicas" && <TableAction action="edit" name={row.title} href={`/adm/verbas/${row.id}/alterar`} />}
+                {section === "emendas-parlamentares" && <TableAction action="edit" name={row.title} href={`/adm/verbas/emendas/${row.id}/alterar`} />}
               </div>
             ) },
           ]} /> : <p className="rounded-lg bg-white p-8 text-center">Nenhum registro encontrado.</p>}
