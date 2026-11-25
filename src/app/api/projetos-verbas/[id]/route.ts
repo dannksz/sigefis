@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { allocationConflict } from "@/lib/allocation-error";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
 import { ProjetoVerbaService } from "@/services/projeto-verba.service";
@@ -41,6 +42,8 @@ export async function PUT(request: Request, { params }: Params) {
     await auditRequestSuccess(request, "ATUALIZAR_PROJETO_VERBA", result.id ?? id);
     return NextResponse.json(result); }
   catch (error: unknown) {
+    const conflict = allocationConflict(error);
+    if (conflict) return conflict;
     if (isNotFound(error) || isReferenceNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao atualizar vínculo projeto-verba:", error);
     return NextResponse.json({ error: "Erro interno ao atualizar vínculo." }, { status: 500 });

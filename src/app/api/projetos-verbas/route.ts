@@ -1,4 +1,5 @@
 import { parseListQuery } from "@/lib/pagination";
+import { allocationConflict } from "@/lib/allocation-error";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
 import { ProjetoVerbaService } from "@/services/projeto-verba.service";
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
     await auditRequestSuccess(request, "CRIAR_PROJETO_VERBA", result.id);
     return NextResponse.json(result, { status: 201 });
   } catch (error: unknown) {
+    const conflict = allocationConflict(error);
+    if (conflict) return conflict;
     if (isReferenceNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao criar vínculo projeto-verba:", error);
     return NextResponse.json({ error: "Erro interno ao criar vínculo." }, { status: 500 });

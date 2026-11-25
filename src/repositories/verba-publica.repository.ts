@@ -1,6 +1,7 @@
 import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import { Prisma, type verba_publica } from "@prisma/client";
 import { VerbaPublicaBudgetError } from "@/lib/verba-publica-budget-error";
+import { AllocationError } from "@/lib/allocation-error";
 import prisma from "@/lib/prisma";
 import type {
   CreateVerbaPublicaDTO,
@@ -66,6 +67,12 @@ export class VerbaPublicaRepository {
           });
           const committed = _sum.valorContrato ?? new Prisma.Decimal(0);
           if (committed.greaterThan(data.valor)) throw new VerbaPublicaBudgetError(committed.toNumber());
+          const allocated = await tx.projeto_verba.aggregate({
+            where: { verbaPublicaId: id }, _sum: { valorAlocado: true },
+          });
+          if (allocated._sum.valorAlocado?.greaterThan(data.valor)) {
+            throw new AllocationError("O valor da verba não pode ficar abaixo do total já alocado às obras.");
+          }
         }
       }
       return tx.verba_publica.update({ where: { id }, data });
