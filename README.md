@@ -92,6 +92,16 @@ Exemplo de corpo para `POST /api/users`:
 
 Execute `npm test` para validar as regras de autenticação e os payloads de usuários.
 
+### Checklist de testes manuais
+
+Use dados de teste em uma obra com contrato, verba alocada e etapa de cronograma. Use a mesma etapa durante todo o fluxo.
+
+- [ ] Como fiscal interno, registrar uma vistoria e anexar uma evidência.
+- [ ] Como fiscal externo designado, abrir a vistoria, conferir o anexo e aprovar a revisão. Confirmar o status e o parecer no histórico.
+- [ ] Como gestor, solicitar uma liberação na verba da etapa. Como administrador de outra conta, aprovar a solicitação e conferir o status e o total aprovado.
+- [ ] Como gestor, tentar registrar um pagamento acima do saldo liberado e conferir se a API bloqueia o registro.
+- [ ] Registrar um pagamento com nota fiscal dentro dos limites do contrato e do saldo liberado. Como administrador de outra conta, aprovar e conferir o status e o total atualizado.
+
 ## Listagem de auditoria
 
 `GET /api/logs-auditoria` exige um JWT de `ADMIN` no cabeçalho `Authorization: Bearer <token>`.
