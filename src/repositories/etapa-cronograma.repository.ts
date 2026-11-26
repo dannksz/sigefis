@@ -1,6 +1,8 @@
 import { paginate, type ListQuery, type PaginatedResult } from "@/lib/pagination";
 import type { etapa_cronograma, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { stageDateError } from "@/lib/etapa-cronograma-validation";
+import { StageRuleError } from "@/lib/stage-rule-error";
 import type {
   CreateEtapaCronogramaDTO,
   EtapaCronogramaResponseDTO,
@@ -76,9 +78,21 @@ function toUpdateData(
   };
 }
 
+async function validateWeight(tx: Prisma.TransactionClient, workId: number, weight: string, excludeId?: number) {
+  const { _sum } = await tx.etapa_cronograma.aggregate({
+    where: { projetoObraId: workId, ...(excludeId !== undefined && { id: { not: excludeId } }) },
+    _sum: { percentualPrevisto: true },
+  });
+  const total = Math.round(Number(_sum.percentualPrevisto ?? 0) * 100) + Math.round(Number(weight) * 100);
+  if (total > 10000) throw new StageRuleError("A soma dos pesos das etapas da obra não pode ultrapassar 100%.", 409);
+}
+
 export class EtapaCronogramaRepository {
   async create(data: CreateEtapaCronogramaDTO) {
-    return response(await prisma.etapa_cronograma.create({ data: toCreateData(data) }));
+    return prisma.$transaction(async (tx) => {
+      await validateWeight(tx, data.projetoObraId, data.percentualPrevisto);
+      return response(await tx.etapa_cronograma.create({ data: toCreateData(data) }));
+    }, { isolationLevel: "Serializable" });
   }
   async findAll(query: ListQuery): Promise<PaginatedResult<ReturnType<typeof response>>> {
     const where = {
@@ -97,7 +111,18 @@ export class EtapaCronogramaRepository {
     return item ? response(item) : null;
   }
   async update(id: number, values: UpdateEtapaCronogramaDTO) {
-    return response(await prisma.etapa_cronograma.update({ where: { id }, data: toUpdateData(values) }));
+    return prisma.$transaction(async (tx) => {
+      const item = await tx.etapa_cronograma.findUnique({ where: { id } });
+      if (!item) throw new Error("Etapa do cronograma não encontrada.");
+      const current = response(item);
+      const next = { ...current, ...values };
+      const dateError = stageDateError(next);
+      if (dateError) throw new StageRuleError(dateError, 400);
+      if (next.projetoObraId !== current.projetoObraId || Number(next.percentualPrevisto) > Number(current.percentualPrevisto)) {
+        await validateWeight(tx, next.projetoObraId, next.percentualPrevisto, id);
+      }
+      return response(await tx.etapa_cronograma.update({ where: { id }, data: toUpdateData(values) }));
+    }, { isolationLevel: "Serializable" });
   }
   async delete(id: number) {
     await prisma.etapa_cronograma.delete({ where: { id } });

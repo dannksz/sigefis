@@ -42,17 +42,17 @@ function fields(value: Record<string, unknown>) {
     "dataInicioReal", "dataFimReal", "status",
   ].includes(key));
 }
-function orderError(data: {
+export function stageDateError(data: {
   dataInicioPrevista: string;
   dataFimPrevista: string;
   dataInicioReal?: string | null;
   dataFimReal?: string | null;
 }): string | null {
-  if (data.dataInicioPrevista > data.dataFimPrevista) {
-    return "A data inicial prevista não pode ser posterior à data final prevista.";
+  if (data.dataInicioPrevista >= data.dataFimPrevista) {
+    return "O fim previsto deve ser posterior ao início previsto.";
   }
-  if (data.dataInicioReal && data.dataFimReal && data.dataInicioReal > data.dataFimReal) {
-    return "A data inicial real não pode ser posterior à data final real.";
+  if (data.dataFimReal && (!data.dataInicioReal || data.dataInicioReal >= data.dataFimReal)) {
+    return "O fim real exige uma data de início real anterior.";
   }
   return null;
 }
@@ -81,7 +81,7 @@ export function parseCreateEtapaCronogramaInput(value: unknown): Result<CreateEt
     dataFimReal: value.dataFimReal ?? null,
     status: value.status.trim(),
   };
-  const error = orderError(data);
+  const error = stageDateError(data);
   return error ? { success: false, error } : { success: true, data };
 }
 

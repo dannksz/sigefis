@@ -15,6 +15,14 @@ type Work = { id: number; nome: string };
 type Session = { nome: string; role: "ADMIN" | "GESTOR" | "FISCAL"; token: string };
 const field = "mt-1 block w-full rounded-lg border border-gray-400 bg-white px-3 py-2";
 const date = (value: string) => value.slice(0, 10).split("-").reverse().join("/");
+const percent = new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 2 });
+const stageStatuses = [
+  ["PLANEJADA", "Planejada"],
+  ["EM_EXECUCAO", "Em execução"],
+  ["ATRASADA", "Atrasada"],
+  ["PARALISADA", "Paralisada"],
+  ["CONCLUIDA", "Concluída"],
+] as const;
 
 function subscribe(callback: () => void) {
   window.addEventListener("storage", callback);
@@ -81,12 +89,12 @@ export default function Schedule() {
       window.dispatchEvent(new Event("sigefis-auth"));
       router.replace("/");
     }}>
-      <ScheduleContent key={session.token} token={session.token} canEdit={session.role !== "FISCAL"} />
+      <ScheduleContent key={session.token} token={session.token} canEdit={session.role !== "FISCAL"} canDelete={session.role === "ADMIN"} />
     </AdminTemplate>
   );
 }
 
-function ScheduleContent({ token, canEdit }: { token: string; canEdit: boolean }) {
+function ScheduleContent({ token, canEdit, canDelete }: { token: string; canEdit: boolean; canDelete: boolean }) {
   const [works, setWorks] = useState<Work[]>();
   const [error, setError] = useState("");
   const [workId, setWorkId] = useState("");
@@ -106,16 +114,19 @@ function ScheduleContent({ token, canEdit }: { token: string; canEdit: boolean }
           <option value="">{works.length ? "Selecione uma obra" : "Nenhuma obra cadastrada"}</option>
           {works.map((work) => <option key={work.id} value={work.id}>{work.nome}</option>)}
         </select></label>}
-      {workId && <StageList key={workId} workId={workId} token={token} canEdit={canEdit} />}
+      {workId && <StageList key={workId} workId={workId} token={token} canEdit={canEdit} canDelete={canDelete} />}
     </div>
   );
 }
 
-function StageList({ workId, token, canEdit }: { workId: string; token: string; canEdit: boolean }) {
+function StageList({ workId, token, canEdit, canDelete }: { workId: string; token: string; canEdit: boolean; canDelete: boolean }) {
   const [stages, setStages] = useState<Stage[]>();
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Stage | "new" | null>(null);
   const [notice, setNotice] = useState("");
+  const [removing, setRemoving] = useState<Stage | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   useEffect(() => {
     const controller = new AbortController();
     listAll<Stage>("etapas-cronograma", token, controller.signal, { projetoObraId: workId })
@@ -124,15 +135,44 @@ function StageList({ workId, token, canEdit }: { workId: string; token: string; 
     return () => controller.abort();
   }, [token, workId]);
 
+  const weight = (stages ?? []).reduce((sum, item) => sum + Math.round(Number(item.percentualPrevisto) * 100), 0) / 10000;
+  const progress = (stages ?? []).reduce((sum, item) =>
+    sum + Number(item.percentualPrevisto) * Number(item.percentualExecutado) / 10000, 0);
+
+  async function deleteStage() {
+    if (!canDelete || !removing || deleting) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await request(`etapas-cronograma/${removing.id}`, token, { method: "DELETE" });
+      setStages((items) => items?.filter((item) => item.id !== removing.id));
+      setRemoving(null);
+      setNotice("Etapa excluída com sucesso.");
+    } catch (reason) {
+      setDeleteError(reason instanceof Error ? reason.message : "Não foi possível excluir a etapa.");
+    } finally {
+      setDeleting(false);
+    }
+  }
   return (
     <section className="mt-6" aria-labelledby="stage-heading">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 id="stage-heading" className="text-xl font-bold">Etapas</h2>
-        {canEdit && <AdminAction variant="primary" disabled={!stages || editing !== null}
+        {canEdit && <AdminAction variant="primary" disabled={!stages || editing !== null || removing !== null}
           onClick={() => { setNotice(""); setEditing("new"); }}>Adicionar etapa</AdminAction>}
       </header>
       {error ? <p role="alert">{error}</p> : !stages && <p role="status">Carregando etapas...</p>}
       {notice && <p role="status" className="mb-4 text-green-800">{notice}</p>}
+      {stages && (
+        <div className="mb-5 rounded-lg bg-white p-4">
+          <dl className="grid gap-3 sm:grid-cols-3">
+            <div><dt>Peso distribuído</dt><dd className="font-semibold">{percent.format(weight)}</dd></div>
+            <div><dt>Peso a distribuir</dt><dd className="font-semibold">{percent.format(Math.max(0, 1 - weight))}</dd></div>
+            <div><dt>Avanço geral da obra</dt><dd className="font-semibold">{percent.format(progress)}</dd></div>
+          </dl>
+          {weight > 1 && <p role="alert" className="mt-3 text-red-800">O cronograma excede 100%. Reduza os pesos em {percent.format(weight - 1)} do total da obra.</p>}
+        </div>
+      )}
       {stages && (stages.length ? <AdminTable data={[...stages].sort((a, b) => a.ordemEtapa - b.ordemEtapa || a.id - b.id)}
         keyExtractor={(item) => item.id} columns={[
           { key: "ordemEtapa", header: "Ordem" },
@@ -141,13 +181,36 @@ function StageList({ workId, token, canEdit }: { workId: string; token: string; 
           { key: "actual", header: "Datas reais", render: (item) => `${item.dataInicioReal ? date(item.dataInicioReal) : "—"} a ${item.dataFimReal ? date(item.dataFimReal) : "—"}` },
           { key: "weight", header: "Peso na obra", render: (item) => `${item.percentualPrevisto}%` },
           { key: "progress", header: "Execução da etapa", render: (item) => `${item.percentualExecutado}%` },
-          { key: "status", header: "Status" },
+          { key: "status", header: "Status", render: (item) =>
+            stageStatuses.find(([value]) => value === item.status)?.[1] ?? item.status },
           ...(canEdit ? [{
             key: "actions", header: "Ações", align: "center" as const,
-            render: (item: Stage) => editing === null && <TableAction action="edit" name={item.nomeEtapa}
-              onClick={() => { setNotice(""); setEditing(item); }} />,
+            render: (item: Stage) => editing === null && removing === null && (
+              <div className="flex justify-center gap-2">
+                <TableAction action="edit" name={item.nomeEtapa} onClick={() => { setNotice(""); setEditing(item); }} />
+                {canDelete && <TableAction action="delete" name={item.nomeEtapa} onClick={() => {
+                  setNotice("");
+                  setDeleteError("");
+                  setRemoving(item);
+                }} />}
+              </div>
+            ),
           }] : []),
         ]} /> : <p className="rounded-lg bg-white p-6">Nenhuma etapa cadastrada para esta obra.</p>)}
+      {removing && (
+        <section aria-labelledby="delete-stage-title" className="mt-5 rounded-lg border border-red-200 bg-white p-5">
+          <h3 id="delete-stage-title" className="font-bold">Excluir etapa?</h3>
+          <p className="mt-2">Confirme a exclusão de <strong>{removing.nomeEtapa}</strong>.</p>
+          {deleteError && <p role="alert" className="mt-3 text-red-800">{deleteError}</p>}
+          <div className="mt-4 flex justify-end gap-3">
+            <AdminAction disabled={deleting} onClick={() => setRemoving(null)}>Cancelar</AdminAction>
+            <button type="button" disabled={deleting} onClick={deleteStage}
+              className="cursor-pointer rounded-lg bg-red-700 px-4 py-2 font-semibold text-white hover:bg-red-800 disabled:cursor-wait disabled:opacity-50">
+              {deleting ? "Excluindo..." : "Excluir etapa"}
+            </button>
+          </div>
+        </section>
+      )}
       {editing && <StageForm stage={editing === "new" ? undefined : editing} workId={Number(workId)} token={token}
         nextOrder={Math.max(0, ...(stages ?? []).map((item) => item.ordemEtapa)) + 1}
         onCancel={() => setEditing(null)} onSaved={(saved) => {
@@ -202,7 +265,14 @@ function StageForm({ stage, workId, token, nextOrder, onCancel, onSaved }: {
       <fieldset disabled={saving} className="grid gap-4 sm:grid-cols-2">
         <label>Nome da etapa<input className={field} name="nomeEtapa" required maxLength={45} defaultValue={stage?.nomeEtapa} /></label>
         <label>Ordem<input className={field} name="ordemEtapa" required type="number" min={1} step={1} defaultValue={stage?.ordemEtapa ?? nextOrder} /></label>
-        <label>Status<input className={field} name="status" required maxLength={45} defaultValue={stage?.status ?? "Planejada"} /></label>
+        <label>Status
+          <select className={field} name="status" required defaultValue={stage?.status ?? "PLANEJADA"}>
+            {stage && !stageStatuses.some(([value]) => value === stage.status) && (
+              <option value={stage.status}>{stage.status} (status atual)</option>
+            )}
+            {stageStatuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
         <label>Peso da etapa na obra (%)
           <input className={field} name="percentualPrevisto" required type="number" min={0} max={100} step="0.01"
             aria-describedby="stage-weight-help" defaultValue={stage?.percentualPrevisto ?? "0"} />

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { StageRuleError } from "@/lib/stage-rule-error";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
 import { EtapaCronogramaService } from "@/services/etapa-cronograma.service";
@@ -36,6 +37,10 @@ export async function PUT(request: Request, { params }: Params) {
     await auditRequestSuccess(request, "ATUALIZAR_ETAPA_CRONOGRAMA", result.id ?? id);
     return NextResponse.json(result); }
   catch (error: unknown) {
+    if (error instanceof StageRuleError) return NextResponse.json({ error: error.message }, { status: error.status });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+      return NextResponse.json({ error: "O cronograma foi alterado simultaneamente. Tente novamente." }, { status: 409 });
+    }
     if (isNotFound(error) || isProjetoNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });
     console.error("Erro ao atualizar etapa:", error);
     return NextResponse.json({ error: "Erro interno ao atualizar etapa." }, { status: 500 });
