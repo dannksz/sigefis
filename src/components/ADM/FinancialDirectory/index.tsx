@@ -11,6 +11,7 @@ import AdminAction from "@/components/ADM/AdminAction";
 import Pagination from "@/components/Pagination";
 import ContractForm from "@/components/ADM/ContractForm";
 import FundingForm from "@/components/ADM/FundingForm";
+import ResourceReleases from "@/components/ADM/ResourceReleases";
 import type { PaginatedResult } from "@/lib/pagination";
 import type { ContratoResponseDTO } from "@/types/contrato";
 import type { VerbaPublicaResponseDTO } from "@/types/verba-publica";
@@ -74,8 +75,8 @@ function readSession(value: string) {
     const [raw, token] = JSON.parse(value);
     const user = JSON.parse(raw);
     if (typeof token === "string" && token && typeof user?.nome === "string") {
-      if (user.role === "ADMIN") return { nome: user.nome as string, role: "ADMIN" as const, token };
-      if (user.role === "GESTOR") return { nome: user.nome as string, role: "GESTOR" as const, token };
+      if (user.role === "ADMIN") return { id: Number(user.id), nome: user.nome as string, role: "ADMIN" as const, token };
+      if (user.role === "GESTOR") return { id: Number(user.id), nome: user.nome as string, role: "GESTOR" as const, token };
     }
   } catch {
     return null;
@@ -94,7 +95,7 @@ async function request<T>(path: string, token: string, signal: AbortSignal): Pro
 }
 
 export default function FinancialDirectory({ area, form, showAmendments }: {
-  area: "contracts" | "funding"; form?: { id?: number; amendment?: boolean }; showAmendments?: boolean;
+  area: "contracts" | "funding" | "finance"; form?: { id?: number; amendment?: boolean }; showAmendments?: boolean;
 }) {
   const value = useSyncExternalStore(subscribe, snapshot, () => "");
   const session = readSession(value);
@@ -118,7 +119,7 @@ export default function FinancialDirectory({ area, form, showAmendments }: {
       window.dispatchEvent(new Event("sigefis-auth"));
       router.replace("/");
     }}>
-      {form ? (
+      {area === "finance" ? <ResourceReleases key={session.token} session={session} /> : form ? (
         contracts ? <ContractForm key={form.id ?? "new"} id={form.id} token={session.token} />
           : <FundingForm key={`${form.amendment}-${form.id ?? "new"}`} id={form.id} token={session.token} amendment={form.amendment} />
       ) : <div className="mx-auto max-w-[1500px]">

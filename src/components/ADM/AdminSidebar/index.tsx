@@ -18,7 +18,7 @@ const menuItems: MenuItem[] = [
   { name: "Contratos", icon: BriefcaseBusiness, roles: ["ADMIN", "GESTOR"], href: "/adm/contratos" },
   { name: "Cronograma", icon: ClipboardCheck, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/cronograma" },
   { name: "Verbas e emendas", icon: WalletCards, roles: ["ADMIN", "GESTOR"], href: "/adm/verbas" },
-  { name: "Financeiro", icon: Banknote, roles: ["ADMIN", "GESTOR"] },
+  { name: "Financeiro", icon: Banknote, roles: ["ADMIN", "GESTOR"], href: "/adm/financeiro" },
   { name: "Fiscalizações", icon: FileSearch, roles: ["ADMIN", "FISCAL"], href: "/adm/fiscalizacoes" },
   { name: "Alertas e bloqueios", icon: AlertTriangle, roles: ["ADMIN", "GESTOR", "FISCAL"] },
   { name: "Regularização", icon: ShieldCheck, roles: ["ADMIN", "GESTOR", "FISCAL"] },
