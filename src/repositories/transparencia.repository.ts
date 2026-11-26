@@ -119,6 +119,60 @@ function toPublicDTO(obra: ObraSelecionada) {
 
 export type ObraPublicaDTO = ReturnType<typeof toPublicDTO>;
 
+const orgao = { select: { nome: true, sigla: true } } as const;
+const verba = { select: { id: true, finalidade: true, origem: true, orgaoPublico: orgao,
+  emendas: { select: { id: true, numero: true, autor: true, valor: true }, orderBy: { id: "asc" } },
+} } as const;
+const selecaoDetalhe = {
+  ...selecaoPublica,
+  orgaoResponsavel: orgao,
+  endereco: { select: { ...selecaoPublica.endereco.select, logradouro: true, numero: true, bairro: true, cep: true, complemento: true } },
+  projetosVerba: { select: { valorAlocado: true, verbaPublica: verba }, orderBy: { id: "asc" } },
+  contratos: { select: { ...selecaoPublica.contratos.select, dataAssinatura: true, verbaPublica: verba }, orderBy: { id: "asc" } },
+  etapas: { ...selecaoPublica.etapas, select: { ...selecaoPublica.etapas.select,
+    ordemEtapa: true, dataInicioReal: true, dataFimReal: true, percentualPrevisto: true, percentualExecutado: true,
+  } },
+  fiscalizacoes: { ...selecaoPublica.fiscalizacoes, select: { ...selecaoPublica.fiscalizacoes.select,
+    evidencias: { where: { publicado: true }, select: { id: true, tipoEvidencia: true, dataRegistro: true, caminhoArquivo: true }, orderBy: { id: "desc" } },
+  } },
+} satisfies Prisma.projeto_obraSelect;
+
+const isoDate = (date: Date | null) => date?.toISOString().slice(0, 10) ?? null;
+
+function publicFunding(funding: Prisma.verba_publicaGetPayload<typeof verba>) {
+  return { ...funding, emendas: funding.emendas.map((item) => ({ ...item, valor: item.valor.toFixed(2) })) };
+}
+
+function toPublicDetail(obra: Prisma.projeto_obraGetPayload<{ select: typeof selecaoDetalhe }>) {
+  const base = toPublicDTO(obra);
+  const { logradouro, numero, bairro, cep, complemento } = obra.endereco;
+  return {
+    ...base,
+    endereco: { logradouro, numero, bairro, cep, complemento },
+    orgaoResponsavel: obra.orgaoResponsavel,
+    contratos: obra.contratos.map((item) => ({
+      id: item.id, numeroContrato: item.numeroContrato, valorContrato: item.valorContrato.toFixed(2),
+      dataInicio: isoDate(item.dataInicio), dataFim: isoDate(item.dataFim), dataAssinatura: isoDate(item.dataAssinatura),
+      empresa: item.empresa.nome, verbaPublica: publicFunding(item.verbaPublica),
+    })),
+    verbas: obra.projetosVerba.map((item) => ({
+      ...publicFunding(item.verbaPublica), valorAlocado: item.valorAlocado.toFixed(2),
+    })),
+    etapas: obra.etapas.map((item, index) => ({
+      ...base.etapas[index], ordemEtapa: item.ordemEtapa, dataInicioReal: isoDate(item.dataInicioReal),
+      dataFimReal: isoDate(item.dataFimReal), percentualPrevisto: item.percentualPrevisto.toNumber(),
+      percentualExecutado: item.percentualExecutado.toNumber(),
+    })),
+    fiscalizacoes: base.fiscalizacoes.map(({ id, etapaCronogramaId, dataVistoria, percentualExecutado, statusVistoria }) =>
+      ({ id, etapaCronogramaId, dataVistoria, percentualExecutado, statusVistoria })),
+    evidencias: obra.fiscalizacoes.flatMap((vistoria) => vistoria.evidencias
+      .filter((item) => /\.(?:jpg|png)$/i.test(item.caminhoArquivo))
+      .map(({ id, tipoEvidencia, dataRegistro }) => ({ id, tipoEvidencia, dataRegistro: isoDate(dataRegistro) }))),
+  };
+}
+
+export type ObraPublicaDetalheDTO = ReturnType<typeof toPublicDetail>;
+
 export interface TransparenciaPagination {
   page: number;
   pageSize: number;
@@ -237,11 +291,11 @@ export class TransparenciaRepository {
     };
   }
 
-  async findById(id: number): Promise<ObraPublicaDTO | null> {
+  async findById(id: number): Promise<ObraPublicaDetalheDTO | null> {
     const obra = await prisma.projeto_obra.findFirst({
       where: { id, publicado: true },
-      select: selecaoPublica,
+      select: selecaoDetalhe,
     });
-    return obra ? toPublicDTO(obra) : null;
+    return obra ? toPublicDetail(obra) : null;
   }
 }

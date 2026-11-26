@@ -12,6 +12,7 @@ function toResponseDTO(
 ): EvidenciaFiscalizacaoResponseDTO {
   return {
     id: item.id,
+    publicado: item.publicado,
     tipoEvidencia: item.tipoEvidencia,
     caminhoArquivo: item.caminhoArquivo,
     latitude: item.latitude,
@@ -30,7 +31,7 @@ function toCreateData(
 function toUpdateData(
   data: UpdateEvidenciaFiscalizacaoDTO,
 ): Prisma.evidencia_fiscalizacaoUncheckedUpdateInput {
-  return data;
+  return { ...data, ...(data.caminhoArquivo !== undefined && { publicado: false }) };
 }
 
 export class EvidenciaFiscalizacaoRepository {

@@ -387,6 +387,23 @@ function InspectionAttachments({ inspection, session }: { inspection: Fiscalizac
     }
   }
 
+  async function toggleEvidencePublication(item: EvidenciaFiscalizacaoResponseDTO) {
+    if (role !== "ADMIN" || pending) return;
+    setPending(true);
+    setError("");
+    try {
+      const saved = await request<{ publicado: boolean }>(`evidencias-fiscalizacao/${item.id}/publicacao`, token, {
+        method: "PUT", body: JSON.stringify({ publicado: !item.publicado }),
+        headers: { "Content-Type": "application/json" },
+      });
+      setEvidence((items) => items?.map((entry) => entry.id === item.id ? { ...entry, ...saved } : entry));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Não foi possível alterar a publicação.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function removeEvidence() {
     if (role !== "ADMIN" || !removingEvidence || pending) return;
     const item = removingEvidence;
@@ -446,6 +463,9 @@ function InspectionAttachments({ inspection, session }: { inspection: Fiscalizac
                   <span className="block text-xs">{date(item.dataRegistro)} · {item.latitude}, {item.longitude}</span></span>
               </button>
               {image && <AdminAction disabled={pending || !!action || !!removingEvidence} onClick={() => { void openFile(item); }}>Baixar arquivo</AdminAction>}
+              {image && role === "ADMIN" && <AdminAction disabled={pending || !!action || !!removingEvidence} onClick={() => { void toggleEvidencePublication(item); }}>
+                {item.publicado ? "Retirar da galeria" : "Publicar na galeria"}
+              </AdminAction>}
               {role === "ADMIN" && !pending && !action && !removingEvidence && (
                 <TableAction action="delete" name={item.tipoEvidencia} onClick={() => {
                   setError("");

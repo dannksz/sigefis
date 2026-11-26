@@ -301,6 +301,7 @@ model revisao_fiscalizacao {
 }
 
 model evidencia_fiscalizacao {
+  publicado      Boolean      @default(false)
   id             Int          @id @default(autoincrement())
   tipoEvidencia  String       @db.VarChar(45)
   caminhoArquivo String       @db.VarChar(255)

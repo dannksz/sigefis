@@ -12,5 +12,6 @@ export type UpdateEvidenciaFiscalizacaoDTO =
 export interface EvidenciaFiscalizacaoResponseDTO
   extends CreateEvidenciaFiscalizacaoDTO {
   id: number;
+  publicado?: boolean;
   dataRegistro: string;
 }
