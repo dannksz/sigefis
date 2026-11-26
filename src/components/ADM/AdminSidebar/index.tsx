@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  AlertTriangle, Banknote, BriefcaseBusiness, Building2, ClipboardCheck, FileCheck2,
+  AlertTriangle, Banknote, BriefcaseBusiness, Building2, ClipboardCheck,
   FileSearch, Gauge, Landmark, ScrollText, ShieldCheck, Users, WalletCards,
 } from "lucide-react";
 import Link from "next/link";
@@ -19,8 +19,7 @@ const menuItems: MenuItem[] = [
   { name: "Cronograma", icon: ClipboardCheck, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/cronograma" },
   { name: "Verbas e emendas", icon: WalletCards, roles: ["ADMIN", "GESTOR"], href: "/adm/verbas" },
   { name: "Financeiro", icon: Banknote, roles: ["ADMIN", "GESTOR"] },
-  { name: "Fiscalizações", icon: FileSearch, roles: ["ADMIN", "FISCAL"] },
-  { name: "Evidências", icon: FileCheck2, roles: ["ADMIN", "FISCAL"] },
+  { name: "Fiscalizações", icon: FileSearch, roles: ["ADMIN", "FISCAL"], href: "/adm/fiscalizacoes" },
   { name: "Alertas e bloqueios", icon: AlertTriangle, roles: ["ADMIN", "GESTOR", "FISCAL"] },
   { name: "Regularização", icon: ShieldCheck, roles: ["ADMIN", "GESTOR", "FISCAL"] },
   { name: "Auditoria", icon: ScrollText, roles: ["ADMIN"] },
