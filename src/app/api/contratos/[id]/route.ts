@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { ContratoBudgetError } from "@/lib/contrato-budget-error";
 import { NextResponse } from "next/server";
@@ -129,8 +130,9 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
 
   try {
+    const work = await snapshotAuditWork("contrato", id);
     await contratoService.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_CONTRATO", id);
+    await auditRequestSuccess(_request, "EXCLUIR_CONTRATO", id, work);
     return NextResponse.json(
       { message: "Contrato excluído com sucesso." },
       { status: 200 },

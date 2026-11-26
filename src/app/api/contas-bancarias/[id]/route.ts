@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
@@ -106,8 +107,9 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
 
   try {
+    const work = await snapshotAuditWork("conta_bancaria", id);
     await service.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_CONTA_BANCARIA", id);
+    await auditRequestSuccess(_request, "EXCLUIR_CONTA_BANCARIA", id, work);
     return NextResponse.json({ message: "Conta bancária excluída com sucesso." });
   } catch (error: unknown) {
     if (isNotFound(error)) {

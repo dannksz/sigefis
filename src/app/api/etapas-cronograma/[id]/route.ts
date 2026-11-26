@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { StageRuleError } from "@/lib/stage-rule-error";
 import { NextResponse } from "next/server";
@@ -50,8 +51,9 @@ export async function DELETE(_request: Request, { params }: Params) {
   const id = parseId((await params).id);
   if (id === null) return NextResponse.json({ error: "ID de etapa inválido." }, { status: 400 });
   try {
+    const work = await snapshotAuditWork("etapa_cronograma", id);
     await service.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_ETAPA_CRONOGRAMA", id);
+    await auditRequestSuccess(_request, "EXCLUIR_ETAPA_CRONOGRAMA", id, work);
     return NextResponse.json({ message: "Etapa excluída com sucesso." });
   }   catch (error: unknown) {
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });

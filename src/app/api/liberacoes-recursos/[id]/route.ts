@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
@@ -57,8 +58,9 @@ export async function DELETE(_request: Request, { params }: Params) {
   const id = parseId((await params).id);
   if (id === null) return NextResponse.json({ error: "ID de liberação inválido." }, { status: 400 });
   try {
+    const work = await snapshotAuditWork("liberacao_recurso", id);
     await service.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_LIBERACAO_RECURSO", id);
+    await auditRequestSuccess(_request, "EXCLUIR_LIBERACAO_RECURSO", id, work);
     return NextResponse.json({ message: "Liberação excluída com sucesso." });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Operação já decidida não pode ser excluída.") {

@@ -121,9 +121,10 @@ export class ProjetoRepository {
     return toResponseDTO(projeto);
   }
 
-  async delete(id: number): Promise<void> {
-    await prisma.projeto_obra.delete({
+  async delete(id: number) {
+    return prisma.projeto_obra.delete({
       where: { id },
+      select: { nome: true },
     });
   }
 }

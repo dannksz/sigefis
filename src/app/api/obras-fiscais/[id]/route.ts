@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
@@ -73,8 +74,9 @@ export async function DELETE(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "ID de obra fiscal inválido." }, { status: 400 });
   }
   try {
+    const work = await snapshotAuditWork("obra_fiscal", id);
     await service.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_OBRA_FISCAL", id);
+    await auditRequestSuccess(_request, "EXCLUIR_OBRA_FISCAL", id, work);
     return NextResponse.json({ message: "Obra fiscal excluída com sucesso." });
   } catch (error: unknown) {
     if (isNotFound(error)) return NextResponse.json({ error: error.message }, { status: 404 });

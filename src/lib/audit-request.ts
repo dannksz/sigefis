@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { snapshotAuditWork } from "@/lib/audit-work";
 
 const resourceNames: Record<string, string> = {
   estados: "estado",
@@ -48,15 +49,20 @@ export async function auditSuccess(input: {
   detalhes?: Record<string, unknown>;
 }): Promise<void> {
   const resource = getAuditResource(input.pathname);
+  const registroId = input.registroId ?? resource.registroId;
+  const work = input.detalhes?.obraNome || registroId <= 0
+    ? undefined
+    : await snapshotAuditWork(resource.tabelaAfetada, registroId);
   await prisma.log_auditoria.create({
     data: {
       acao: input.acao,
       tabelaAfetada: resource.tabelaAfetada,
-      registroId: input.registroId ?? resource.registroId,
+      registroId,
       detalhes: JSON.stringify({
         tipo: "operation_completed",
         status: "success",
         rota: input.pathname,
+        ...work,
         ...(input.detalhes ?? {}),
       }),
       ipOrigem: input.ipOrigem,

@@ -90,7 +90,7 @@ export class ProjetoService {
     return this.projetoRepository.update(id, data);
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: number) {
     await this.findById(id);
     return this.projetoRepository.delete(id);
   }

@@ -24,6 +24,8 @@ export type CreateLogAuditoriaInputDTO = Omit<
 export type UpdateLogAuditoriaDTO = Partial<CreateLogAuditoriaDTO>;
 
 export interface LogAuditoriaResponseDTO extends Omit<CreateLogAuditoriaDTO, "usuarioId"> {
+  usuarioNome?: string | null;
+  obraNome?: string | null;
   id: number;
   dataHora: string;
   usuarioId: number | null;

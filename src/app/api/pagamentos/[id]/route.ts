@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
@@ -37,8 +38,10 @@ export async function PUT(request: Request, { params }: Params) {
 }
 export async function DELETE(_request: Request, { params }: Params) {
   const id = parseId((await params).id); if (id === null) return NextResponse.json({ error: "ID de pagamento inválido." }, { status: 400 });
-  try { await service.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_PAGAMENTO", id); return NextResponse.json({ message: "Pagamento excluído com sucesso." }); } catch (error: unknown) {
+  try {
+    const work = await snapshotAuditWork("pagamento", id);
+    await service.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_PAGAMENTO", id, work); return NextResponse.json({ message: "Pagamento excluído com sucesso." }); } catch (error: unknown) {
     if (error instanceof Error && error.message === "Operação já decidida não pode ser excluída.") {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }

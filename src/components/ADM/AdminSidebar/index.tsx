@@ -20,9 +20,9 @@ const menuItems: MenuItem[] = [
   { name: "Verbas e emendas", icon: WalletCards, roles: ["ADMIN", "GESTOR"], href: "/adm/verbas" },
   { name: "Financeiro", icon: Banknote, roles: ["ADMIN", "GESTOR"], href: "/adm/financeiro" },
   { name: "Fiscalizações", icon: FileSearch, roles: ["ADMIN", "FISCAL"], href: "/adm/fiscalizacoes" },
-  { name: "Alertas e bloqueios", icon: AlertTriangle, roles: ["ADMIN", "GESTOR", "FISCAL"] },
-  { name: "Regularização", icon: ShieldCheck, roles: ["ADMIN", "GESTOR", "FISCAL"] },
-  { name: "Auditoria", icon: ScrollText, roles: ["ADMIN"] },
+  { name: "Alertas e bloqueios", icon: AlertTriangle, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/alertas-bloqueios" },
+  { name: "Regularização", icon: ShieldCheck, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/regularizacao" },
+  { name: "Auditoria", icon: ScrollText, roles: ["ADMIN"], href: "/adm/auditoria" },
 ];
 
 export default function AdminSidebar({ role }: { role: Exclude<UserRole, "USER"> }) {

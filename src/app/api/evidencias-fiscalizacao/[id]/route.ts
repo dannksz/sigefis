@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { NextResponse } from "next/server";
 import { EvidenciaFiscalizacaoService } from "@/services/evidencia-fiscalizacao.service";
 import { parseUpdateEvidenciaFiscalizacaoInput } from "@/lib/evidencia-fiscalizacao-validation";
@@ -71,6 +72,7 @@ export async function DELETE(request: Request, { params }: Params) {
   if (id === null) return NextResponse.json({ error: "ID de evidência inválido." }, { status: 400 });
   try {
     const evidence = await service.findById(id);
+    const work = await snapshotAuditWork("evidencia_fiscalizacao", id);
     await service.delete(id);
     try {
       await deleteEvidenceFile(evidence.caminhoArquivo);
@@ -89,6 +91,7 @@ export async function DELETE(request: Request, { params }: Params) {
         usuarioId,
         ipOrigem: request.headers.get("x-auth-client-ip") || "unknown",
         registroId: id,
+        detalhes: work,
       }).catch((error: unknown) =>
         console.error("Erro ao auditar exclusão de evidência:", error),
       );

@@ -12,6 +12,9 @@ import Pagination from "@/components/Pagination";
 import ContractForm from "@/components/ADM/ContractForm";
 import FundingForm from "@/components/ADM/FundingForm";
 import ResourceReleases from "@/components/ADM/ResourceReleases";
+import OversightDirectory, { type OversightArea } from "@/components/ADM/OversightDirectory";
+import OversightForm from "@/components/ADM/OversightDirectory/Form";
+import { canWriteOversight, oversightRecords, type OversightFormRoute } from "@/components/ADM/OversightDirectory/crud";
 import type { PaginatedResult } from "@/lib/pagination";
 import type { ContratoResponseDTO } from "@/types/contrato";
 import type { VerbaPublicaResponseDTO } from "@/types/verba-publica";
@@ -77,6 +80,7 @@ function readSession(value: string) {
     if (typeof token === "string" && token && typeof user?.nome === "string") {
       if (user.role === "ADMIN") return { id: Number(user.id), nome: user.nome as string, role: "ADMIN" as const, token };
       if (user.role === "GESTOR") return { id: Number(user.id), nome: user.nome as string, role: "GESTOR" as const, token };
+      if (user.role === "FISCAL") return { id: Number(user.id), nome: user.nome as string, role: "FISCAL" as const, token };
     }
   } catch {
     return null;
@@ -94,8 +98,9 @@ async function request<T>(path: string, token: string, signal: AbortSignal): Pro
   return response.json();
 }
 
-export default function FinancialDirectory({ area, form, showAmendments }: {
-  area: "contracts" | "funding" | "finance"; form?: { id?: number; amendment?: boolean }; showAmendments?: boolean;
+export default function FinancialDirectory({ area, form, showAmendments, oversightForm, showBlocks }: {
+  area: "contracts" | "funding" | "finance" | OversightArea; form?: { id?: number; amendment?: boolean }; showAmendments?: boolean;
+  oversightForm?: OversightFormRoute; showBlocks?: boolean;
 }) {
   const value = useSyncExternalStore(subscribe, snapshot, () => "");
   const session = readSession(value);
@@ -105,7 +110,8 @@ export default function FinancialDirectory({ area, form, showAmendments }: {
   const section = contracts ? "contratos" : fundingSection;
   const Icon = contracts ? BriefcaseBusiness : WalletCards;
 
-  if (!session) {
+  const oversight = area === "alerts" || area === "regularization" || area === "audit";
+  if (!session || (area === "audit" && session.role !== "ADMIN") || (!oversight && session.role === "FISCAL")) {
     return <main className="p-8">{value
       ? <><p>Área exclusiva para administradores e gestores.</p><Link href="/login" className="underline">Entrar</Link></>
       : <p role="status">Carregando painel...</p>}</main>;
@@ -119,7 +125,12 @@ export default function FinancialDirectory({ area, form, showAmendments }: {
       window.dispatchEvent(new Event("sigefis-auth"));
       router.replace("/");
     }}>
-      {area === "finance" ? <ResourceReleases key={session.token} session={session} /> : form ? (
+      {oversightForm ? (
+        canWriteOversight(oversightForm.resource, session.role)
+          ? <OversightForm key={`${oversightForm.resource}-${oversightForm.id ?? "new"}`} {...oversightForm} token={session.token} userId={session.id} role={session.role} />
+          : <p role="alert">Seu perfil não tem permissão para alterar esse registro. <Link className="underline" href={area === "alerts" ? "/adm/alertas-bloqueios" : oversightRecords[oversightForm.resource].base}>Voltar à lista</Link></p>
+      ) : oversight ? <OversightDirectory key={area} area={area} token={session.token} role={session.role} showBlocks={showBlocks} /> :
+        area === "finance" && session.role !== "FISCAL" ? <ResourceReleases key={session.token} session={session} /> : form ? (
         contracts ? <ContractForm key={form.id ?? "new"} id={form.id} token={session.token} />
           : <FundingForm key={`${form.amendment}-${form.id ?? "new"}`} id={form.id} token={session.token} amendment={form.amendment} />
       ) : <div className="mx-auto max-w-[1500px]">

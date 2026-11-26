@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
@@ -66,8 +67,9 @@ export async function DELETE(_request: Request, { params }: Params) {
   const id = parseId((await params).id);
   if (id === null) return NextResponse.json({ error: "ID de alerta inválido." }, { status: 400 });
   try {
+    const work = await snapshotAuditWork("alerta_fiscalizacao", id);
     await service.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_ALERTA_FISCALIZACAO", id);
+    await auditRequestSuccess(_request, "EXCLUIR_ALERTA_FISCALIZACAO", id, work);
     return NextResponse.json({ message: "Alerta excluído com sucesso." });
   } catch (error: unknown) {
     if (isReferenceError(error)) return NextResponse.json({ error: error.message }, { status: 404 });

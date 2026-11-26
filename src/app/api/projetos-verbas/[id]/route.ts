@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { allocationConflict } from "@/lib/allocation-error";
 import { NextResponse } from "next/server";
@@ -54,8 +55,9 @@ export async function DELETE(_request: Request, { params }: Params) {
   const id = parseId((await params).id);
   if (id === null) return NextResponse.json({ error: "ID de vínculo inválido." }, { status: 400 });
   try {
+    const work = await snapshotAuditWork("projeto_verba", id);
     await service.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_PROJETO_VERBA", id);
+    await auditRequestSuccess(_request, "EXCLUIR_PROJETO_VERBA", id, work);
     return NextResponse.json({ message: "Vínculo projeto-verba excluído com sucesso." });
   } catch (error: unknown) {
     const conflict = allocationConflict(error);

@@ -1,3 +1,4 @@
+import { snapshotAuditWork } from "@/lib/audit-work";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auditRequestSuccess } from "@/lib/audit-request";
@@ -92,8 +93,9 @@ export async function DELETE(_request: Request, { params }: Params) {
     );
   }
   try {
+    const work = await snapshotAuditWork("processo_regularizacao", id);
     await service.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_PROCESSO_REGULARIZACAO", id);
+    await auditRequestSuccess(_request, "EXCLUIR_PROCESSO_REGULARIZACAO", id, work);
     return NextResponse.json({
       message: "Processo de regularização excluído com sucesso.",
     });

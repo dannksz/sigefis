@@ -84,7 +84,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   try {
     const projeto = await projetoService.update(id, input.data);
-    await auditRequestSuccess(request, "ATUALIZAR_PROJETO", projeto.id ?? id);
+    await auditRequestSuccess(request, "ATUALIZAR_PROJETO", projeto.id ?? id, { obraNome: projeto.nome });
     return NextResponse.json(projeto, { status: 200 });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "Uma obra publicada precisa de um órgão responsável.") {
@@ -117,8 +117,8 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
 
   try {
-    await projetoService.delete(id);
-    await auditRequestSuccess(_request, "EXCLUIR_PROJETO", id);
+    const projeto = await projetoService.delete(id);
+    await auditRequestSuccess(_request, "EXCLUIR_PROJETO", id, { obraNome: projeto.nome });
     return NextResponse.json(
       { message: "Projeto excluído com sucesso." },
       { status: 200 },

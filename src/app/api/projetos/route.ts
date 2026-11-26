@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
   try {
     const projeto = await projetoService.create(input.data);
-    await auditRequestSuccess(request, "CRIAR_PROJETO", projeto.id);
+    await auditRequestSuccess(request, "CRIAR_PROJETO", projeto.id, { obraNome: projeto.nome });
     return NextResponse.json(projeto, { status: 201 });
   } catch (error: unknown) {
     if (isLocationNotFound(error) || (error instanceof Error && error.message === "Órgão responsável não encontrado.")) {
