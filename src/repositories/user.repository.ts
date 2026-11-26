@@ -19,6 +19,14 @@ function toResponseDTO(user: usuario): UserResponseDTO {
 }
 
 export class UserRepository {
+  async listFiscalOptions() {
+    return prisma.usuario.findMany({
+      where: { role: "FISCAL" },
+      select: { id: true, nome: true },
+      orderBy: [{ nome: "asc" }, { id: "asc" }],
+    });
+  }
+
   async create(data: CreateUserDTO): Promise<UserResponseDTO> {
     const user = await prisma.usuario.create({
       data: {

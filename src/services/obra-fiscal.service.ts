@@ -13,6 +13,10 @@ export class ObraFiscalService {
   private userRepository = new UserRepository();
   private projetoRepository = new ProjetoRepository();
 
+  listFiscalOptions() {
+    return this.userRepository.listFiscalOptions();
+  }
+
   private async ensureReferences(data: {
     usuarioId?: number;
     projetoObraId?: number;

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import AdminTemplate from "@/templates/AdminTemplate";
 import WorkFunding from "@/components/ADM/WorkFunding";
+import WorkInspectors from "@/components/ADM/WorkInspectors";
 import type { OrgaoPublicoResponseDTO } from "@/types/orgao-publico";
 import { consultarCep } from "@/services/cep.service";
 import { formatCep } from "@/lib/input-masks";
@@ -267,7 +268,12 @@ export default function AddWork({ workId }: { workId?: number }) {
             <button type="submit" disabled={saving || loadingLocations || states.length === 0} className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 px-7 font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-400">{saving ? "Salvando..." : isEditing ? "Salvar alterações" : "Cadastrar obra"}<Check className="size-4" aria-hidden="true" /></button>
           </div>
         </form>
-        {workId !== undefined && publication && <WorkFunding key={workId} workId={workId} token={auth.token} />}
+        {workId !== undefined && publication && (
+          <>
+            <WorkFunding workId={workId} token={auth.token} />
+            <WorkInspectors workId={workId} token={auth.token} />
+          </>
+        )}
       </div>
     </AdminTemplate>
   );
