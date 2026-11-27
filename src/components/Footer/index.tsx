@@ -21,9 +21,7 @@ export default function Footer() {
           </div>
         </div>
         <nav className="portal-footer-links" aria-label="Informações institucionais">
-          <PortalDialog label="Quem somos?" title="Quem somos">
-            <p>O SIGEFIS é um projeto acadêmico de gestão, fiscalização e transparência de obras públicas.</p>
-          </PortalDialog>
+          <Link href="/sobre">Quem somos?</Link>
           <PortalDialog label="Política de privacidade" title="Política de privacidade">
             <p>A consulta pública pode ser usada sem criar conta. A política completa será publicada nesta seção.</p>
           </PortalDialog>

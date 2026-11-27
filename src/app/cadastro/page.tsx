@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/Toast/ToastContext";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -33,6 +34,7 @@ const inputClass = "peer w-full rounded-lg border-2 border-gray-300 bg-white px-
 const labelClass = "absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-600";
 
 export default function CadastroPage() {
+  const { showToast } = useToast();
   const [form, setForm] = useState<FormData>(initialForm);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -76,6 +78,7 @@ export default function CadastroPage() {
         setMessage(responseError(data));
         return;
       }
+      showToast("Cadastro realizado com sucesso.", "success");
       setSuccess(true);
       setMessage("Cadastro realizado com sucesso! Você já pode fazer login.");
       setForm(initialForm);

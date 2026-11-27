@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { snapshotAuditWork } from "@/lib/audit-work";
 
 const resourceNames: Record<string, string> = {
+  "meu-perfil": "usuario",
   estados: "estado",
   cidades: "cidade",
   enderecos: "endereco",

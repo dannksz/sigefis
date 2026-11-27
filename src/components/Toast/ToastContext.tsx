@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useRef, createContext, useContext, type ReactNode } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface Toast {
-  id: string;
+  id: number;
   message: string;
   type: ToastType;
-  duration?: number;
 }
 
 interface ToastContextType {
@@ -20,10 +19,11 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const nextId = useRef(0);
 
   const showToast = (message: string, type: ToastType = 'info', duration: number = 3000) => {
-    const id = Date.now().toString();
-    const newToast: Toast = { id, message, type, duration };
+    const id = ++nextId.current;
+    const newToast: Toast = { id, message, type };
     
     setToasts(prev => [...prev, newToast]);
 
@@ -34,7 +34,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const removeToast = (id: string) => {
+  const removeToast = (id: number) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
@@ -61,17 +61,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       
       {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="pointer-events-none fixed inset-x-3 top-3 z-[100] space-y-2 sm:left-auto sm:right-4 sm:w-96">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`flex items-center gap-3 p-4 rounded-lg border shadow-lg min-w-80 max-w-sm animate-in slide-in-from-right ${getStyles(toast.type)}`}
+            className={`pointer-events-auto flex items-center gap-3 rounded-lg border p-4 shadow-lg [&>svg]:shrink-0 ${getStyles(toast.type)}`}
           >
             {getIcon(toast.type)}
-            <span className="flex-1 text-sm font-medium">{toast.message}</span>
+            <span role={toast.type === 'error' ? 'alert' : 'status'} className="min-w-0 flex-1 break-words text-sm">{toast.message}</span>
             <button
+              type="button"
+              aria-label="Fechar notificação"
               onClick={() => removeToast(toast.id)}
-              className="hover:opacity-70 transition-opacity"
+              className="grid size-8 shrink-0 cursor-pointer place-items-center rounded transition-colors hover:bg-black/5 focus-visible:outline-2"
             >
               <X className="w-4 h-4" />
             </button>

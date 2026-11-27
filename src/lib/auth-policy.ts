@@ -32,6 +32,7 @@ export function canApproveFinancialOperation(role: UserRole): boolean {
 type Permission = "read" | "write";
 
 const readRoles: Record<string, UserRole[]> = {
+  "/api/meu-perfil": ["ADMIN", "GESTOR", "FISCAL", "USER"],
   "/api/estados": ["ADMIN", "GESTOR", "FISCAL", "USER"],
   "/api/cidades": ["ADMIN", "GESTOR", "FISCAL", "USER"],
   "/api/enderecos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
@@ -57,6 +58,7 @@ const readRoles: Record<string, UserRole[]> = {
 };
 
 const writeRoles: Record<string, UserRole[]> = {
+  "/api/meu-perfil": ["ADMIN", "GESTOR", "FISCAL", "USER"],
   "/api/estados": ["ADMIN", "GESTOR"],
   "/api/cidades": ["ADMIN", "GESTOR"],
   "/api/enderecos": ["ADMIN", "GESTOR"],

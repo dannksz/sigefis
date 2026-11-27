@@ -1,3 +1,4 @@
+import { useToast } from "@/components/Toast/ToastContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -35,6 +36,7 @@ function SelectField({ label, name, value, options }: {
 }
 
 export default function OversightForm({ resource, id, token, userId, role }: Props) {
+  const { showToast } = useToast();
   const router = useRouter();
   const config = oversightRecords[resource];
   const editing = id !== undefined;
@@ -92,6 +94,7 @@ export default function OversightForm({ resource, id, token, userId, role }: Pro
       await oversightRequest(editing ? `${resource}/${id}` : resource, token, {
         method: editing ? "PUT" : "POST", body: JSON.stringify(payload),
       });
+      showToast("Registro salvo com sucesso.", "success");
       router.push(listHref);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Não foi possível salvar.");

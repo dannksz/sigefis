@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/Toast/ToastContext";
 import { ArrowLeft, Check, Landmark, MapPin, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -63,6 +64,7 @@ async function fetchAll<T>(path: string, token: string) {
   return items;
 }
 export default function AddWork({ workId }: { workId?: number }) {
+  const { showToast } = useToast();
   const router = useRouter();
   const authValue = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const auth = useMemo(() => parseAuth(authValue), [authValue]);
@@ -201,6 +203,7 @@ export default function AddWork({ workId }: { workId?: number }) {
           },
         }),
       });
+      showToast("Obra salva com sucesso.", "success");
       router.push("/adm/obras");
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : `Erro ao ${isEditing ? "alterar" : "cadastrar"} obra.`);

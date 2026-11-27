@@ -51,6 +51,7 @@
 }
 .portal-nav-links a:hover,
 .portal-nav-links button:hover,
+.portal-footer-links a:hover,
 .portal-footer-links button:hover { text-decoration-color: currentColor; }
 
 .portal-search-shortcut,
@@ -203,7 +204,7 @@
   gap: 6px 0;
   margin-top: 24px;
 }
-.portal-footer-links > button {
+.portal-footer-links > :is(a, button) {
   border-right: 1px solid #757575;
   padding-inline: 10px;
   font-size: 10px;
@@ -212,7 +213,7 @@
   text-decoration: underline transparent;
   transition: text-decoration-color 0.5s ease;
 }
-.portal-footer-links > button:first-child { padding-left: 0; }
+.portal-footer-links > :is(a, button):first-child { padding-left: 0; }
 
 .portal-dialog {
   position: fixed;

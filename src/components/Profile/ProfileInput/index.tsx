@@ -1,33 +1,39 @@
 "use client";
 
-import { ReactNode } from "react";
+import { useId, type ComponentProps, type ReactNode } from "react";
 
 type ProfileInputProps = {
   label: string;
   name: string;
-  value: string;
+  value?: string;
+  defaultValue?: string;
+  formatter?: (value: string) => string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: string;
   required?: boolean;
   readOnly?: boolean;
   icon?: ReactNode;
   disabled?: boolean;
-};
+} & Pick<ComponentProps<"input">, "autoComplete" | "maxLength" | "minLength" | "inputMode">;
 
 export default function ProfileInput({ 
   label, 
   name, 
   value, 
+  defaultValue,
+  formatter,
   onChange, 
   type = "text", 
   required = false,
   readOnly = false,
   icon,
-  disabled = false
+  disabled = false,
+  ...attributes
 }: ProfileInputProps) {
+  const id = useId();
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700">
         {label}
       </label>
       <div className="relative">
@@ -37,14 +43,20 @@ export default function ProfileInput({
           </div>
         )}
         <input
+          {...attributes}
+          id={id}
           type={type}
           name={name}
           value={value}
-          onChange={onChange}
+          defaultValue={defaultValue}
+          onChange={(event) => {
+            if (formatter) event.currentTarget.value = formatter(event.currentTarget.value);
+            onChange?.(event);
+          }}
           required={required}
           readOnly={readOnly}
           disabled={disabled}
-          className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+          className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus-visible:outline-2 focus-visible:outline-primary-dark transition-colors ${
             icon ? "pl-10" : ""
           } ${
             readOnly || disabled ? "bg-gray-50 text-gray-600" : "bg-white"

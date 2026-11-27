@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/Toast/ToastContext";
 import { LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ function parseUser(value: string): StoredUser | null {
 }
 
 export default function AuthMenu() {
+  const { showToast } = useToast();
   const router = useRouter();
   const storedUser = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const user = useMemo(() => parseUser(storedUser), [storedUser]);
@@ -46,6 +48,7 @@ export default function AuthMenu() {
       storage.removeItem("sigefis_user");
     }
     window.dispatchEvent(new Event("sigefis-auth"));
+    showToast("Você saiu da sua conta.", "success");
     router.push("/");
     router.refresh();
   }
@@ -68,6 +71,9 @@ export default function AuthMenu() {
           <p className="truncate text-sm font-bold text-secondary">{user.nome}</p>
           <p className="mt-0.5 truncate text-xs text-[#666]">{user.email}</p>
         </div>
+        <Link href="/perfil" role="menuitem" className="mt-1 flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-secondary transition-colors duration-300 hover:bg-ice focus-visible:bg-ice focus-visible:outline-none">
+          <UserRound size={16} aria-hidden="true" /> Minhas informações
+        </Link>
         {user.role !== "USER" && (
           <Link href="/adm" role="menuitem" className="mt-1 flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-secondary transition-colors duration-300 hover:bg-ice focus-visible:bg-ice focus-visible:outline-none">
             <LayoutDashboard size={16} aria-hidden="true" /> Acessar painel administrativo

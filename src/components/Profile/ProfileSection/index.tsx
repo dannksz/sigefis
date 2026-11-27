@@ -22,8 +22,9 @@ export default function ProfileSection({
         <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
         {showEdit && onEdit && (
           <button
+            type="button"
             onClick={onEdit}
-            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 transition-colors"
+            className="flex cursor-pointer items-center gap-2 text-sm font-medium text-secondary underline-offset-4 hover:underline"
           >
             <Edit2 className="w-4 h-4" />
             Editar

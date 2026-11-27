@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/Toast/ToastContext";
 import { ArrowLeft, Lock, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,6 +26,7 @@ function apiError(value: unknown) {
 }
 
 export default function LoginPage() {
+  const { showToast } = useToast();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,6 +59,7 @@ export default function LoginPage() {
       selectedStorage.setItem("sigefis_token", data.token);
       selectedStorage.setItem("sigefis_user", JSON.stringify(data.user));
       window.dispatchEvent(new Event("sigefis-auth"));
+      showToast("Login realizado com sucesso.", "success");
       router.replace("/");
     } catch {
       setError("Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.");

@@ -1,4 +1,4 @@
-import { Archive, Search, TrendingUp, TriangleAlert } from "lucide-react";
+import { Archive, Search, TriangleAlert } from "lucide-react";
 import ConsultationButton from "@/components/ConsultationButton";
 import MainTemplate from "@/templates/MainTemplate/Index";
 
@@ -30,11 +30,6 @@ export default function Home() {
                 <TriangleAlert size={18} aria-hidden="true" /> Obras
               </ConsultationButton>
               </form>
-            </li>
-            <li>
-              <ConsultationButton aria-disabled="true">
-                <TrendingUp size={18} aria-hidden="true" /> Relatórios
-              </ConsultationButton>
             </li>
           </ul>
         </section>

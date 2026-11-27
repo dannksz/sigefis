@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/Toast/ToastContext";
 import { useState, type FormEvent } from "react";
 import AdminInput from "@/components/ADM/AdminInput";
 import AdminAction from "@/components/ADM/AdminAction";
@@ -7,6 +8,7 @@ import { formatPhone } from "@/lib/input-masks";
 import { motivosContato } from "@/types/contato";
 
 export default function ContactForm() {
+  const { showToast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -35,7 +37,7 @@ export default function ContactForm() {
       setName("");
       setEmail("");
       setPhone("");
-      setNotice({ error: false, text: "Mensagem enviada com sucesso." });
+      showToast("Mensagem enviada com sucesso.", "success");
     } catch (error) {
       setNotice({ error: true, text: error instanceof Error ? error.message : "Não foi possível enviar sua mensagem." });
     } finally {

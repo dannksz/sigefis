@@ -1,7 +1,6 @@
 import { Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import PortalDialog from "@/components/PortalDialog";
 import AuthMenu from "@/components/AuthMenu";
 
 export default function Navbar() {
@@ -14,9 +13,7 @@ export default function Navbar() {
         <nav className="portal-nav" aria-label="Navegação principal">
           <ul className="portal-nav-links">
             <li><Link href="/obras">Obras</Link></li>
-            <li><PortalDialog label="Sobre" title="Sobre o SIGEFIS">
-              <p>O SIGEFIS reúne dados sobre obras, contratos, fiscalizações e uso de recursos públicos.</p>
-            </PortalDialog></li>
+            <li><Link href="/sobre">Sobre</Link></li>
             <li><Link href="/contato">Contato</Link></li>
             <li><Link href="/faq">Suporte</Link></li>
           </ul>

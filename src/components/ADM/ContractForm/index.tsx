@@ -1,3 +1,4 @@
+import { useToast } from "@/components/Toast/ToastContext";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import AdminAction from "@/components/ADM/AdminAction";
@@ -37,6 +38,7 @@ async function listAll<T>(path: string, token: string, signal: AbortSignal) {
 }
 
 export default function ContractForm({ token, id }: { token: string; id?: number }) {
+  const { showToast } = useToast();
   const router = useRouter();
   const [data, setData] = useState<{
     works: NamedRecord[]; companies: NamedRecord[]; funds: VerbaPublicaResponseDTO[]; contract?: ContratoResponseDTO;
@@ -117,6 +119,7 @@ export default function ContractForm({ token, id }: { token: string; id?: number
     setSaving(true);
     try {
       await request(path, token, { method: id === undefined ? "POST" : "PUT", body: JSON.stringify(body) });
+      showToast("Contrato salvo com sucesso.", "success");
       router.push("/adm/contratos");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Falha ao salvar o contrato.");

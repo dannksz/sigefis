@@ -1,3 +1,4 @@
+import { useToast } from "@/components/Toast/ToastContext";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import AdminAction from "@/components/ADM/AdminAction";
@@ -32,6 +33,7 @@ async function listAll<T>(path: string, token: string, signal: AbortSignal) {
 type RecordDTO = VerbaPublicaResponseDTO | EmendaParlamentarResponseDTO;
 
 export default function FundingForm({ id, token, amendment = false }: { id?: number; token: string; amendment?: boolean }) {
+  const { showToast } = useToast();
   const router = useRouter();
   const [data, setData] = useState<{ options: { id: number; label: string }[]; record?: RecordDTO }>();
   const [amount, setAmount] = useState("");
@@ -82,6 +84,7 @@ export default function FundingForm({ id, token, amendment = false }: { id?: num
     setSaving(true);
     try {
       await request(path, token, { method: id === undefined ? "POST" : "PUT", body: JSON.stringify(body) });
+      showToast("Registro salvo com sucesso.", "success");
       router.push(backHref);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : `Falha ao salvar a ${label}.`);

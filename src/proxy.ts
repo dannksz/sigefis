@@ -70,6 +70,7 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/api/users/:path*",
+    "/api/meu-perfil",
     "/api/estados/:path*",
     "/api/cidades/:path*",
     "/api/enderecos/:path*",
