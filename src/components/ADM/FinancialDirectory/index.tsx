@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import AdminTemplate from "@/templates/AdminTemplate";
 import AdminTable from "@/components/ADM/AdminTable";
+import ContactMessages from "@/components/ADM/ContactMessages";
 import TableAction from "@/components/ADM/TableAction";
 import AdminAction from "@/components/ADM/AdminAction";
 import Pagination from "@/components/Pagination";
@@ -99,7 +100,7 @@ async function request<T>(path: string, token: string, signal: AbortSignal): Pro
 }
 
 export default function FinancialDirectory({ area, form, showAmendments, oversightForm, showBlocks }: {
-  area: "contracts" | "funding" | "finance" | OversightArea; form?: { id?: number; amendment?: boolean }; showAmendments?: boolean;
+  area: "contracts" | "funding" | "finance" | "messages" | OversightArea; form?: { id?: number; amendment?: boolean }; showAmendments?: boolean;
   oversightForm?: OversightFormRoute; showBlocks?: boolean;
 }) {
   const value = useSyncExternalStore(subscribe, snapshot, () => "");
@@ -111,7 +112,7 @@ export default function FinancialDirectory({ area, form, showAmendments, oversig
   const Icon = contracts ? BriefcaseBusiness : WalletCards;
 
   const oversight = area === "alerts" || area === "regularization" || area === "audit";
-  if (!session || (area === "audit" && session.role !== "ADMIN") || (!oversight && session.role === "FISCAL")) {
+  if (!session || ((area === "audit" || area === "messages") && session.role !== "ADMIN") || (!oversight && session.role === "FISCAL")) {
     return <main className="p-8">{value
       ? <><p>Área exclusiva para administradores e gestores.</p><Link href="/login" className="underline">Entrar</Link></>
       : <p role="status">Carregando painel...</p>}</main>;
@@ -125,7 +126,7 @@ export default function FinancialDirectory({ area, form, showAmendments, oversig
       window.dispatchEvent(new Event("sigefis-auth"));
       router.replace("/");
     }}>
-      {oversightForm ? (
+      {area === "messages" ? <ContactMessages key={session.token} token={session.token} /> : oversightForm ? (
         canWriteOversight(oversightForm.resource, session.role)
           ? <OversightForm key={`${oversightForm.resource}-${oversightForm.id ?? "new"}`} {...oversightForm} token={session.token} userId={session.id} role={session.role} />
           : <p role="alert">Seu perfil não tem permissão para alterar esse registro. <Link className="underline" href={area === "alerts" ? "/adm/alertas-bloqueios" : oversightRecords[oversightForm.resource].base}>Voltar à lista</Link></p>

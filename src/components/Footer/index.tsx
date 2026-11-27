@@ -30,9 +30,7 @@ export default function Footer() {
           <PortalDialog label="Acessibilidade" title="Acessibilidade">
             <p>Use Tab para percorrer os controles, Enter para ativá-los e Esc para fechar as janelas de informação.</p>
           </PortalDialog>
-          <PortalDialog label="Contato" title="Contato">
-            <p>O canal de contato do SIGEFIS será divulgado nesta seção.</p>
-          </PortalDialog>
+          <Link href="/contato">Contato</Link>
         </nav>
       </div>
     </footer>

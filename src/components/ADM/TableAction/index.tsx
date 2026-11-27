@@ -1,8 +1,9 @@
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Info, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 const actions = {
   details: { icon: Eye, label: "Ver detalhes", color: "text-blue-700 hover:bg-blue-50" },
+  info: { icon: Info, label: "Ver informações", color: "text-blue-700 hover:bg-blue-50" },
   edit: { icon: Pencil, label: "Alterar", color: "text-amber-700 hover:bg-amber-50" },
   delete: { icon: Trash2, label: "Excluir", color: "text-red-600 hover:bg-red-50" },
 };

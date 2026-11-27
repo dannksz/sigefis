@@ -10,6 +10,7 @@ async function main() {
 
   await prisma.$transaction(async (tx) => {
     const counts = await Promise.all([
+      tx.mensagem_contato.count(),
       tx.estado.count(),
       tx.cidade.count(),
       tx.endereco.count(),

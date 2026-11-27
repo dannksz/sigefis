@@ -93,5 +93,6 @@ export const config = {
     "/api/processos-regularizacao/:path*",
     "/api/decisoes-financeiras/:path*",
     "/api/logs-auditoria/:path*",
+    "/api/mensagens-contato/:path*",
   ],
 };

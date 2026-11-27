@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 type AdminInputProps = {
   label: string;
   name: string;
@@ -6,6 +8,8 @@ type AdminInputProps = {
   type?: string;
   required?: boolean;
   step?: string;
+  autoComplete?: string;
+  maxLength?: number;
 };
 
 export default function AdminInput({ 
@@ -15,11 +19,17 @@ export default function AdminInput({
   onChange, 
   type = "text", 
   required = true,
-  step
+  step,
+  autoComplete,
+  maxLength,
 }: AdminInputProps) {
+  const id = useId();
   return (
     <div className="relative w-full">
       <input
+        id={id}
+        autoComplete={autoComplete}
+        maxLength={maxLength}
         type={type}
         name={name}
         value={value}
@@ -30,6 +40,7 @@ export default function AdminInput({
         placeholder=" "
       />
       <label 
+        htmlFor={id}
         className="absolute -top-3 left-3 bg-white px-2 text-sm font-medium text-gray-600 transition-all duration-200"
       >
         {label} {required && <span className="text-red-500">*</span>}

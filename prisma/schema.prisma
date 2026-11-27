@@ -2,6 +2,18 @@ datasource db {
   provider = "mysql"
 }
 
+model mensagem_contato {
+  id       Int      @id @default(autoincrement())
+  nome     String   @db.VarChar(120)
+  email    String   @db.VarChar(191)
+  telefone String   @db.VarChar(11)
+  motivo   String   @db.VarChar(32)
+  mensagem String   @db.Text
+  criadoEm DateTime @default(now()) @db.DateTime(3)
+
+  @@index([criadoEm, id])
+}
+
 generator client {
   provider   = "prisma-client-js"
   engineType = "library"

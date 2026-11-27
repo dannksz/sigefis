@@ -2,7 +2,7 @@
 
 import {
   AlertTriangle, Banknote, BriefcaseBusiness, Building2, ClipboardCheck,
-  FileSearch, Gauge, Landmark, ScrollText, ShieldCheck, Users, WalletCards,
+  FileSearch, Gauge, Landmark, MessageSquare, ScrollText, ShieldCheck, Users, WalletCards,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,6 +23,7 @@ const menuItems: MenuItem[] = [
   { name: "Alertas e bloqueios", icon: AlertTriangle, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/alertas-bloqueios" },
   { name: "Regularização", icon: ShieldCheck, roles: ["ADMIN", "GESTOR", "FISCAL"], href: "/adm/regularizacao" },
   { name: "Auditoria", icon: ScrollText, roles: ["ADMIN"], href: "/adm/auditoria" },
+  { name: "Mensagens", icon: MessageSquare, roles: ["ADMIN"], href: "/adm/mensagens" },
 ];
 
 export default function AdminSidebar({ role }: { role: Exclude<UserRole, "USER"> }) {
