@@ -35,26 +35,26 @@ const readRoles: Record<string, UserRole[]> = {
   "/api/meu-perfil": ["ADMIN", "GESTOR", "FISCAL", "USER"],
   "/api/estados": ["ADMIN", "GESTOR", "FISCAL", "USER"],
   "/api/cidades": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/enderecos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/orgaos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/empresas": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/projetos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/contratos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/verbas-publicas": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/emendas-parlamentares": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/projetos-verbas": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/etapas-cronograma": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/obras-fiscais": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/fiscalizacoes": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/evidencias-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/liberacoes-recursos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/pagamentos": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/contas-bancarias": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/alertas-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/bloqueios-repasse": ["ADMIN", "GESTOR", "FISCAL", "USER"],
-  "/api/processos-regularizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/enderecos": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/orgaos": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/empresas": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/projetos": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/contratos": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/verbas-publicas": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/emendas-parlamentares": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/projetos-verbas": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/etapas-cronograma": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/obras-fiscais": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/fiscalizacoes": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/evidencias-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/liberacoes-recursos": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/pagamentos": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/contas-bancarias": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/alertas-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/bloqueios-repasse": ["ADMIN", "GESTOR", "FISCAL"],
+  "/api/processos-regularizacao": ["ADMIN", "GESTOR", "FISCAL"],
   "/api/decisoes-financeiras": ["ADMIN", "GESTOR"],
-  "/api/revisoes-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL", "USER"],
+  "/api/revisoes-fiscalizacao": ["ADMIN", "GESTOR", "FISCAL"],
 };
 
 const writeRoles: Record<string, UserRole[]> = {
@@ -126,6 +126,7 @@ export function verifyAccessToken(
       typeof payload === "string" ||
       typeof payload.id !== "number" ||
       !Number.isSafeInteger(payload.id) ||
+      payload.id <= 0 ||
       !isUserRole(payload.role)
     ) {
       return null;

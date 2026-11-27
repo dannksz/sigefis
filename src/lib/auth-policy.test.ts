@@ -32,7 +32,12 @@ describe("user access policy", () => {
     expect(canAccessResource("GESTOR", "/api/fiscalizacoes", "POST")).toBe(false);
     expect(canAccessResource("FISCAL", "/api/fiscalizacoes", "POST")).toBe(true);
     expect(canAccessResource("FISCAL", "/api/pagamentos", "POST")).toBe(false);
-    expect(canAccessResource("USER", "/api/projetos/1", "GET")).toBe(true);
+    expect(canAccessResource("USER", "/api/projetos/1", "GET")).toBe(false);
+    expect(canAccessResource("USER", "/api/enderecos", "GET")).toBe(false);
+    expect(canAccessResource("USER", "/api/contas-bancarias", "GET")).toBe(false);
+    expect(canAccessResource("USER", "/api/evidencias-fiscalizacao/1/arquivo/foto.jpg", "GET")).toBe(false);
+    expect(canAccessResource("USER", "/api/meu-perfil", "GET")).toBe(true);
+    expect(canAccessResource("USER", "/api/meu-perfil", "PUT")).toBe(true);
     expect(canAccessResource("USER", "/api/projetos/1", "PUT")).toBe(false);
     expect(canAccessResource("GESTOR", "/api/logs-auditoria", "GET")).toBe(false);
   });

@@ -163,14 +163,14 @@ function ScheduleContent({ session, inspections }: { session: Session; inspectio
 
 function InspectionList({ workId, session }: { workId: string; session: Session }) {
   const { token, role, id } = session;
-  const [data, setData] = useState<{ stages: Stage[]; visits: FiscalizacaoResponseDTO[] }>();
+  const [data, setData] = useState<{ stages: Stage[]; visits: FiscalizacaoResponseDTO[]; internal: boolean }>();
   const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [selected, setSelected] = useState<FiscalizacaoResponseDTO | null>(null);
-  const canCreate = (role === "ADMIN" || role === "FISCAL") && Number.isSafeInteger(id) && id > 0;
+  const canCreate = (role === "ADMIN" || data?.internal === true) && Number.isSafeInteger(id) && id > 0;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -178,13 +178,14 @@ function InspectionList({ workId, session }: { workId: string; session: Session 
     Promise.all([
       listAll<Stage>("etapas-cronograma", token, controller.signal, filter),
       listAll<FiscalizacaoResponseDTO>("fiscalizacoes", token, controller.signal, filter),
-    ]).then(([stages, visits]) => {
-      if (!controller.signal.aborted) setData({ stages, visits });
+      role === "FISCAL" ? listAll<{ tipoFiscal: string }>("obras-fiscais", token, controller.signal, { ...filter, usuarioId: String(id) }) : [],
+    ]).then(([stages, visits, assignments]) => {
+      if (!controller.signal.aborted) setData({ stages, visits, internal: assignments.some((item) => item.tipoFiscal === "INTERNO") });
     }).catch((reason: unknown) => {
       if (!controller.signal.aborted) setLoadError(reason instanceof Error ? reason.message : "Falha ao carregar as vistorias.");
     });
     return () => controller.abort();
-  }, [token, workId]);
+  }, [id, role, token, workId]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -289,27 +290,25 @@ function InspectionAttachments({ inspection, session }: { inspection: Fiscalizac
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [assigned, setAssigned] = useState(false);
+  const [assignments, setAssignments] = useState<string[]>([]);
   const [preview, setPreview] = useState<{ blob: Blob; label: string } | null>(null);
   const [removingEvidence, setRemovingEvidence] = useState<EvidenciaFiscalizacaoResponseDTO | null>(null);
-  const canUpload = role === "ADMIN" || role === "FISCAL";
+  const canUpload = role === "ADMIN" || (role === "FISCAL" && assignments.length > 0);
   const canCheckReview = role === "FISCAL" && id > 0 && id !== inspection.usuarioId;
-  const canReview = canCheckReview && assigned;
+  const canReview = canCheckReview && assignments.includes("EXTERNO");
 
   useEffect(() => {
-    if (!canCheckReview) return;
+    if (role !== "FISCAL" || id <= 0) return;
     const controller = new AbortController();
-    const query = new URLSearchParams({
+    const filter = {
       projetoObraId: String(inspection.projetoObraId),
       usuarioId: String(id),
-      tipoFiscal: "EXTERNO",
-      pageSize: "1",
-    });
-    request<PaginatedResult<{ usuarioId: number }>>(`obras-fiscais?${query}`, token, { signal: controller.signal })
-      .then((result) => { if (!controller.signal.aborted) setAssigned(result.data.some((item) => item.usuarioId === id)); })
-      .catch(() => { if (!controller.signal.aborted) setAssigned(false); });
+    };
+    listAll<{ tipoFiscal: string }>("obras-fiscais", token, controller.signal, filter)
+      .then((result) => { if (!controller.signal.aborted) setAssignments(result.map((item) => item.tipoFiscal)); })
+      .catch(() => { if (!controller.signal.aborted) setAssignments([]); });
     return () => controller.abort();
-  }, [canCheckReview, id, inspection.projetoObraId, token]);
+  }, [id, inspection.projetoObraId, role, token]);
 
   useEffect(() => {
     const controller = new AbortController();

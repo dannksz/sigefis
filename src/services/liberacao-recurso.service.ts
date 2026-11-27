@@ -83,7 +83,10 @@ export class LiberacaoRecursoService {
         throw new Error("A liberação exige fiscalização revisada externamente.");
       }
       const updated = await tx.liberacao_recurso.updateMany({
-        where: { id, status: "PENDENTE" },
+        where: {
+          id, status: "PENDENTE", etapaCronogramaId: current.etapaCronogramaId,
+          verbaPublicaId: current.verbaPublicaId, valorLiberacao: current.valorLiberacao,
+        },
         data: {
           status: "APROVADA",
           aprovadoPorUsuarioId,

@@ -45,7 +45,15 @@ export async function PUT(request: Request, { params }: Params) {
   }
   const input = parseUpdateEvidenciaFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
+  if (input.data.caminhoArquivo !== undefined || input.data.fiscalizacaoId !== undefined) {
+    return NextResponse.json({ error: "O arquivo e a vistoria são definidos no upload da evidência." }, { status: 400 });
+  }
   try {
+    const evidence = await service.findById(id);
+    if (request.headers.get("x-auth-role") === "FISCAL" &&
+        !await service.isAssignedInspector(Number(request.headers.get("x-auth-user-id")), evidence.fiscalizacaoId)) {
+      return NextResponse.json({ error: "Somente fiscais designados podem alterar esta evidência." }, { status: 403 });
+    }
     const result = await service.update(id, input.data);
     const usuarioId = Number(request.headers.get("x-auth-user-id"));
     if (Number.isSafeInteger(usuarioId) && usuarioId > 0) {

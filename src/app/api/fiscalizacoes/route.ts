@@ -45,8 +45,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: input.error }, { status: 400 });
   }
   try {
-    const result = await service.create(input.data);
     const usuarioId = Number(request.headers.get("x-auth-user-id"));
+    if (!Number.isSafeInteger(usuarioId) || usuarioId <= 0 || input.data.usuarioId !== usuarioId ||
+        (request.headers.get("x-auth-role") === "FISCAL" && !await service.isInternalInspector(usuarioId, input.data.projetoObraId))) {
+      return NextResponse.json({ error: "A vistoria deve ser registrada pelo fiscal interno designado ou pelo administrador." }, { status: 403 });
+    }
+    if (!["REGISTRADA", "PENDENTE_REVISAO"].includes(input.data.statusVistoria)) {
+      return NextResponse.json({ error: "Informe um status inicial válido para a vistoria." }, { status: 400 });
+    }
+    const result = await service.create(input.data);
     if (Number.isSafeInteger(usuarioId) && usuarioId > 0) {
       await auditSuccess({
         acao: "CRIAR_FISCALIZACAO",

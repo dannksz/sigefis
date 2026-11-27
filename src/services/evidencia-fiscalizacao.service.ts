@@ -1,4 +1,5 @@
 import type { ListQuery } from "@/lib/pagination";
+import prisma from "@/lib/prisma";
 import { FiscalizacaoRepository } from "@/repositories/fiscalizacao.repository";
 import { EvidenciaFiscalizacaoRepository } from "@/repositories/evidencia-fiscalizacao.repository";
 import type {
@@ -10,6 +11,13 @@ import type {
 export class EvidenciaFiscalizacaoService {
   private repository = new EvidenciaFiscalizacaoRepository();
   private fiscalizacaoRepository = new FiscalizacaoRepository();
+
+  async isAssignedInspector(usuarioId: number, fiscalizacaoId: number): Promise<boolean> {
+    return Boolean(await prisma.obra_fiscal.findFirst({
+      where: { usuarioId, projetoObra: { fiscalizacoes: { some: { id: fiscalizacaoId } } } },
+      select: { id: true },
+    }));
+  }
 
   private async ensureFiscalizacao(fiscalizacaoId: number): Promise<void> {
     if (!(await this.fiscalizacaoRepository.findById(fiscalizacaoId))) {
@@ -34,8 +42,8 @@ export class EvidenciaFiscalizacaoService {
     return item;
   }
 
-  async findByFileUrl(url: string, id: number): Promise<EvidenciaFiscalizacaoResponseDTO> {
-    return (await this.repository.findByFileUrl(url)) ?? this.findById(id);
+  async findByFileUrl(url: string, legacyUrl: string): Promise<EvidenciaFiscalizacaoResponseDTO | null> {
+    return (await this.repository.findByFileUrl(url)) ?? this.repository.findByFileUrl(legacyUrl);
   }
 
   async update(

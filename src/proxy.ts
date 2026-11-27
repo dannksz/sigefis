@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import prisma from "./lib/prisma";
 import {
   canAccessResource,
   canApproveFinancialOperation,
@@ -7,7 +8,7 @@ import {
   verifyAccessToken,
 } from "./lib/auth-policy";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const isPublicRegistration =
     request.nextUrl.pathname === "/api/users" && request.method === "POST";
   if (isPublicRegistration) {
@@ -37,6 +38,16 @@ export function proxy(request: NextRequest) {
       { error: "Token inválido ou expirado." },
       { status: 401 },
     );
+  }
+  const account = await prisma.usuario.findUnique({ where: { id: claims.id }, select: { role: true } }).catch((error) => {
+    console.error("Erro ao consultar a conta autenticada:", error);
+    return undefined;
+  });
+  if (account === undefined) {
+    return NextResponse.json({ error: "Não foi possível validar a sessão." }, { status: 503 });
+  }
+  if (!account || account.role !== claims.role) {
+    return NextResponse.json({ error: "Sua sessão foi alterada. Entre novamente." }, { status: 401 });
   }
   if (!canAccessResource(claims.role, request.nextUrl.pathname, request.method)) {
     return NextResponse.json(

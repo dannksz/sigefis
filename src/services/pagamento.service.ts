@@ -209,7 +209,11 @@ export class PagamentoService {
         throw new Error("A etapa precisa de fiscalização revisada externamente.");
       }
       const updated = await tx.pagamento.updateMany({
-        where: { id, status: "PENDENTE" },
+        where: {
+          id, status: "PENDENTE", contratoId: pagamento.contratoId,
+          etapaCronogramaId: pagamento.etapaCronogramaId, valorPagamento: pagamento.valorPagamento,
+          numeroNotaFiscal: pagamento.numeroNotaFiscal,
+        },
         data: {
           status: "APROVADA",
           aprovadoPorUsuarioId,

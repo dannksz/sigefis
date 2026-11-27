@@ -59,6 +59,16 @@ export async function PUT(request: Request, { params }: Params) {
   const input = parseUpdateFiscalizacaoInput(body);
   if (!input.success) return NextResponse.json({ error: input.error }, { status: 400 });
   try {
+    const current = await service.findById(id);
+    if ((input.data.usuarioId !== undefined && input.data.usuarioId !== current.usuarioId) ||
+        (request.headers.get("x-auth-role") === "FISCAL" &&
+          (Number(request.headers.get("x-auth-user-id")) !== current.usuarioId ||
+            !await service.isInternalInspector(current.usuarioId, input.data.projetoObraId ?? current.projetoObraId)))) {
+      return NextResponse.json({ error: "A vistoria só pode ser alterada pelo fiscal interno responsável ou pelo administrador." }, { status: 403 });
+    }
+    if (input.data.statusVistoria !== undefined && !["REGISTRADA", "PENDENTE_REVISAO"].includes(input.data.statusVistoria)) {
+      return NextResponse.json({ error: "Os demais status são definidos pela revisão da vistoria." }, { status: 400 });
+    }
     const result = await service.update(id, input.data);
     await auditRequestSuccess(request, "ATUALIZAR_FISCALIZACAO", result.id ?? id);
     return NextResponse.json(result);

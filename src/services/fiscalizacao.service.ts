@@ -16,6 +16,13 @@ export class FiscalizacaoService {
   private projetoRepository = new ProjetoRepository();
   private userRepository = new UserRepository();
 
+  async isInternalInspector(usuarioId: number, projetoObraId: number): Promise<boolean> {
+    return Boolean(await prisma.obra_fiscal.findFirst({
+      where: { usuarioId, projetoObraId, tipoFiscal: "INTERNO" },
+      select: { id: true },
+    }));
+  }
+
   private async ensureReferences(data: {
     projetoObraId?: number;
     usuarioId?: number;

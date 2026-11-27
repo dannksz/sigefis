@@ -24,7 +24,8 @@ export async function GET(_request: Request, { params }: Params) {
 
   try {
     const url = `/api/evidencias-fiscalizacao/${id}/arquivo/${nome}`;
-    const evidence = await service.findByFileUrl(url, id);
+    const evidence = await service.findByFileUrl(url, `/uploads/evidencias/${id}/${nome}`);
+    if (!evidence) return new NextResponse(null, { status: 404 });
     const filePath = getEvidenceFilePath(evidence.caminhoArquivo);
     if (path.basename(filePath) !== nome) {
       return NextResponse.json({ error: "Arquivo de evidência não encontrado." }, { status: 404 });

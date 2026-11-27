@@ -58,6 +58,10 @@ export async function POST(request: Request) {
   }
 
   let caminhoArquivo: string;
+  if (request.headers.get("x-auth-role") === "FISCAL" &&
+      !await service.isAssignedInspector(Number(request.headers.get("x-auth-user-id")), fiscalizacaoId)) {
+    return NextResponse.json({ error: "Somente fiscais designados podem anexar evidências nesta obra." }, { status: 403 });
+  }
   try {
     caminhoArquivo = await saveEvidenceFile(fiscalizacaoId, file);
   } catch (error: unknown) {
